@@ -2,8 +2,8 @@ define simp_pki_service::dogtag::config_item (
   $ca_id,
   $key,
   $value,
-  $subsystem => 'ca',
-  $file      => 'CS.cfg'
+  $subsystem = 'ca',
+  $file      = 'CS.cfg'
 ){
   augeas { $name:
     lens    => 'Simplevars.lns',

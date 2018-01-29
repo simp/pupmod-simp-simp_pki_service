@@ -30,7 +30,7 @@ If you find any issues, they can be submitted to our
 
 Traditionally, SIMP has used an internal "FakeCA" `openssl`-based CA. Over
 time, this has proven insufficient for our needs, particularly for capabilities
-in terms of Key Enrollment (SCEP and CMD), OCSP, and overall management of
+in terms of Key Enrollment (SCEP and CMC), OCSP, and overall management of
 certificates.
 
 Additionally, we found that many users wanted to adjust the certificate

@@ -11,7 +11,7 @@ group :development do
   gem 'travis-lint'
   gem 'travish'
   gem 'pry'
-  gem 'pry-byebug'
+  gem 'pry-byebug' if Gem::Dependency.new('','>= 2.2.0').match?('',RUBY_VERSION)
   gem 'pry-doc'
 end
 

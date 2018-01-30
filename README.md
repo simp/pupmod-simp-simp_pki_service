@@ -50,7 +50,7 @@ vendor supported manner.
 This module sets up the following components on your system:
 
   * Internal [389ds](http://directory.fedoraproject.org/) Directory Server
-    * Bound to `127.0.0.1` only
+    * Bound to `127.0.0.1` only to restrict access
 
   * Dogtag with the following subsystems:
     * Root CA -> `simp-pki-root`
@@ -104,7 +104,7 @@ However, **once the system is active you CANNOT change the ports or hostname**
 since the OCSP information is usually incorporated into all signed certificates
 and will then be invalid.
 
-If you wish to customize the existing CA settins, or add your own CAs to the
+If you wish to customize the existing CA settings, or add your own CAs to the
 mix, you can easily do this using the `simp_pki_service::custom_cas` parameter.
 This hash will be combined with `simp_pki_service::cas` using a `deep_merge` to
 allow for full customization.
@@ -137,6 +137,45 @@ that the `FakeCA` was traditionally used.
 **NOTE:** This has been pinned to port `8443` by default since it is the
 default `dogtag` port and the most likely to be allowed through firewalls by
 default.
+
+### The `/root/.dogtag` Directory
+
+This directory holds all configuration and maintenance information and
+credentials for the various CAs that have been set up on the system.
+
+    /root/.dogtag
+    ├── generated_configs                   <- Puppet Generated Files
+    │   ├── dogtag_simp-pki-root_ca.cfg
+    │   ├── dogtag_simp-puppet-pki_ca.cfg
+    │   ├── dogtag_simp-puppet-pki_kra.cfg
+    │   ├── dogtag_simp-site-pki_ca.cfg
+    │   ├── dogtag_simp-site-pki_kra.cfg
+    │   ├── ds_pw.txt                       <- Directory Server Password
+    │   └── ds_simp-pki-ds_setup.inf
+    ├── simp-pki-root
+    │   ├── ca
+    │   │   ├── alias                       <- NSSDB for Root PKI
+    │   │   ├── password.conf               <- Password for Root PKI
+    │   │   └── pkcs12_password.conf
+    │   ├── ca_admin.cert
+    │   ├── ca_admin.cert.der
+    │   └── ca_admin_cert.p12
+    ├── simp-puppet-pki
+    │   ├── ca
+    │   │   ├── alias                       <- NSSDB for Puppet Sub PKI
+    │   │   ├── password.conf               <- Password for Puppet Sub PKI
+    │   │   └── pkcs12_password.conf
+    │   ├── ca_admin.cert
+    │   ├── ca_admin.cert.der
+    │   └── ca_admin_cert.p12
+    └── simp-site-pki
+        ├── ca
+        │   ├── alias                       <- NSSDB for Site Sub PKI
+        │   ├── password.conf               <- Password for Site Sub PKI
+        │   └── pkcs12_password.conf
+        ├── ca_admin.cert
+        ├── ca_admin.cert.der
+        └── ca_admin_cert.p12
 
 ### CLI CA Control
 
@@ -250,8 +289,8 @@ For the `site-pki` CA, this would be in
 `/var/lib/pki/simp-site-pki/ca/conf/flatfile.txt`.
 
 The file is organized as a set of paired values, one for the **IP address**
-(not hostnme) of the client that will be enrolling and the other a unique, one
-time use, password that will be used by the cliient during enrollment.
+(not hostname) of the client that will be enrolling and the other a unique, one
+time use, password that will be used by the client during enrollment.
 
 **Example**
 
@@ -327,14 +366,14 @@ inability to negotiate a proper cipher set for SCEP communication.
 
 An alternate method for certificate enrollment,
 [CMC](https://tools.ietf.org/html/rfc5273) may be used if you need to generate
-certificates for a set of hosts or users and distribute them via the `pki`
-module or some other means.
+certificates for a set of hosts or users and distribute them via the `simp-pki`
+puppet module or some other means.
 
 At this time, single use credentials have not been implemented so you should
 not add this capability to all hosts.
 
 All of the following steps should be done from a host that has access to one of
-the priviliged PKI user certificates (in general this is only your CA).
+the privileged PKI user certificates (in general this is only your CA).
 
 1. Create a certificate request for your host:
 
@@ -342,7 +381,7 @@ the priviliged PKI user certificates (in general this is only your CA).
      -N` first!
 
     ```bash
-    [root@ca ~]# cd CMC
+    [root@ca ~]# mkdir -f CMC && cd CMC
     [root@ca CMC]# certutil -R -s "cn=`hostname -f`,ou=Hosts,dc=your,dc=domain" \
       -k rsa \
       -g 4096 \
@@ -374,7 +413,7 @@ the priviliged PKI user certificates (in general this is only your CA).
    # Path to the PKCS10/CRMF request.
    # The content must be in Base-64 encoded format.
    # Multiple files are supported. They must be separated by space.
-   input=/root/hostcert.req
+   input=/root/CMC/hostcert.req
 
    # Path for the CMC request.
    output=/root/CMC/sslserver-cmc-request.bin

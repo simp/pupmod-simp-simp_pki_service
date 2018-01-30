@@ -1,0 +1,3 @@
+* Mon Jan 29 2018 SIMP Team <simp-project.com> - 0.0.1
+- This is the initial code for a `simp_pki_service` module, which is a
+  SIMP-oriented installation of the Dogtag Certificate System.

@@ -1,0 +1,14 @@
+---
+fixtures:
+  repositories:
+    haveged:
+      repo: https://github.com/simp/pupmod-simp-haveged
+      branch: 0.4.4
+    stdlib:
+      repo: https://github.com/simp/puppetlabs-stdlib
+      branch: 4.13.1
+    simplib:
+      repo: https://github.com/simp/pupmod-simp-simplib
+      branch: master
+  symlinks:
+    simp_pki_service: "#{source_dir}"

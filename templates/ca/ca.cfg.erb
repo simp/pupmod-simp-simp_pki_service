@@ -1,0 +1,45 @@
+[DEFAULT]
+pki_instance_name=<%= @name %>
+
+pki_security_domain_name=<%= @pki_security_domain %>
+
+<% unless @root_ca -%>
+pki_security_domain_hostname=<%= @pki_security_domain_hostname %>
+pki_security_domain_https_port=<%= @pki_security_domain_https_port %>
+pki_security_domain_user=<%= @pki_security_domain_user %>
+pki_security_domain_password=<%= @pki_security_domain_password %>
+<% end -%>
+
+pki_ds_bind_dn=<%= @dirsrv_bind_dn %>
+pki_ds_database=<%= @name %>-ca
+pki_ds_password=<%= @admin_password %>
+
+[CA]
+pki_ds_hostname=127.0.0.1
+
+pki_client_database_purge=False
+pki_client_database_password=<%= @admin_password %>
+pki_client_pkcs12_password=<%= @admin_password %>
+
+<% unless @root_ca -%>
+pki_subordinate=True
+pki_subordinate_create_new_security_domain=True
+pki_subordinate_security_domain_name=<%= @pki_security_domain + '-' + @name %>
+pki_issuing_ca_hostname=<%= @pki_security_domain_hostname %>
+pki_issuing_ca_https_port=<%= @pki_security_domain_https_port %>
+<% end -%>
+
+pki_http_port=<%= @http_port %>
+pki_https_port=<%= @https_port %>
+
+pki_admin_email=<%= @admin_user %>@<%= @facts['fqdn'] %>
+pki_admin_name=<%= @admin_user %>
+pki_admin_nickname=<%= @admin_user %>
+pki_admin_password=<%= @admin_password %>
+pki_admin_uid=<%= @admin_user %>
+
+<% unless @root_ca -%>
+[Tomcat]
+pki_ajp_port=<%= @tomcat_ajp_port %>
+pki_tomcat_server_port=<%= @tomcat_server_port %>
+<% end -%>

@@ -1,0 +1,7 @@
+---
+version: 4
+datadir: data
+hierarchy:
+  - name: "Common"
+    backend: "yaml"
+    path: "common"

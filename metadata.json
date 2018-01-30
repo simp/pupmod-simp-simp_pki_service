@@ -1,0 +1,53 @@
+{
+  "name": "simp-simp_pki_service",
+  "version": "0.0.1",
+  "author": "SIMP Team",
+  "summary": "A SIMP module for setting up a SIMP-specific DogTag CA",
+  "license": "Apache-2.0",
+  "source": "https://github.com/simp/pupmod-simp-simp_dogtag",
+  "project_page": "https://github.com/simp/pupmod-simp-simp_dogtag",
+  "issues_url": "https://simp-project.atlassian.net",
+  "dependencies": [
+    {
+      "name": "simp/haveged",
+      "version_requirement": ">= 0.4.4 < 1.0.0"
+    },
+    {
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 4.13.1 < 5.0.0"
+    },
+    {
+      "name": "simp/simplib",
+      "version_requirement": ">= 3.9.0 < 4.0.0"
+    }
+  ],
+  "data_provider": "hiera",
+  "operatingsystem_support": [
+    {
+      "operatingsystem": "CentOS",
+      "operatingsystemrelease": [
+        "7"
+      ]
+    },
+    {
+      "operatingsystem": "RedHat",
+      "operatingsystemrelease": [
+        "7"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 4.7.0 < 6.0.0"
+    }
+  ],
+  "tags": [
+    "simp",
+    "dogtag",
+    "pki",
+    "CA"
+  ],
+  "template-url": "file:///opt/puppetlabs/pdk/share/cache/pdk-templates.git",
+  "template-ref": "1.3.2-0-g07678c8"
+}

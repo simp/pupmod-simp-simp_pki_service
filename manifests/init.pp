@@ -1,160 +1,93 @@
+# Creates a single-host Dogtag CA with active sub-CAs
+#
+# @param pki_security_domain
+#   A unique name for the security domain for the CA collection
+#
+# @param ds_config
+#   Backend 389DS data storage configuration for Dogtag
+#
+#     * This is passed directly into the ``simp_pki_service::directory_server``
+#       defined type
+#
+# @param cas
+#   A Hash of CA entries that are passed directly into the
+#   ``simp_pki_service::ca`` defined type
+#
+# @param custom_cas
+#   A user-provided Hash of additional CA entries that are passed directly into
+#   the ``simp_pki_service::ca`` defined type
+#
+# @param enable_haveged
+#   Enable the HAVEGEd entropy collection daemon
+#
 class simp_pki_service (
-  # Set in module data
-  Simp_pki_service::SecurityDomain $pki_security_domain,
-  String[4]                        $dirsrv_root_dn,
-  String[16]                       $admin_password              = simplib::passgen('simp_pki_service', { 'length' => 64, 'complexity' => 0 }),
-  String[4]                        $dirsrv_base_dn              = sprintf('ou=%s,%s',$pki_security_domain, simplib::ldap::domain_to_dn($facts['domain'], false)),
-  Simplib::IP                      $dirsrv_listen_address       = '127.0.0.1',
-  Boolean                          $dirsrv_enable_admin_service = false,
-  Simp_Pki_service::Ca_config      $custom_cas                  = {},
-  Simp_pki_service::Ca_config      $cas                         = {
+  Simp_pki_service::SecurityDomain $pki_security_domain          = 'SIMP',
+  Hash                             $ds_config                    = {
+    'root_dn'        => "cn=${pki_security_domain} Directory Manager",
+    'base_dn'        => sprintf('ou=%s,%s',$pki_security_domain, simplib::ldap::domain_to_dn($facts['domain'], false)),
+    'admin_password' => simplib::passgen('389-ds-simp-pki', {'length' => 64, 'complexity' => 0 })
+  },
+  Hash                             $cas                          = {
     'simp-pki-root' => {
-      'root_ca'            => true,
-      'enable_kra'         => false,
+      'root_ca'             => true,
+      'pki_security_domain' => $pki_security_domain,
+      # The following two items need to be here so that the other CA instances
+      # can use them for connecting to the security domain
+      'admin_user'         => 'caadmin',
+      'admin_password'     => simplib::passgen("${pki_security_domain}_simp-pki-root", { 'length' => 64, 'complexity' => 0 }),
       'http_port'          => 4508,
       'https_port'         => 4509,
       'tomcat_ajp_port'    => 4506,
       'tomcat_server_port' => 4507
     },
     'simp-puppet-pki' => {
-      'enable_scep'        => true,
-      'http_port'          => 5508,
-      'https_port'         => 5509,
-      'tomcat_ajp_port'    => 5506,
-      'tomcat_server_port' => 5507,
-      'parent_ca'          => 'simp-pki-root'
+      'enable_kra'          => true,
+      'enable_scep'         => true,
+      'http_port'           => 5508,
+      'https_port'          => 5509,
+      'tomcat_ajp_port'     => 5506,
+      'tomcat_server_port'  => 5507,
+      'parent_ca'           => 'simp-pki-root'
     },
     'simp-site-pki' => {
-      'enable_scep'        => true,
-      'http_port'          => 8080,
-      'https_port'         => 8443,
-      'tomcat_ajp_port'    => 8440,
-      'tomcat_server_port' => 8441,
-      'parent_ca'          => 'simp-pki-root'
+      'enable_kra'          => true,
+      'enable_scep'         => true,
+      'http_port'           => 8080,
+      'https_port'          => 8443,
+      'tomcat_ajp_port'     => 8440,
+      'tomcat_server_port'  => 8441,
+      'parent_ca'           => 'simp-pki-root'
     }
-  }
+  },
+  Hash                             $custom_cas                   = {},
+  Boolean                          $enable_haveged               = true
 ){
-  include haveged
+  if $enable_haveged { include haveged }
   include simp_pki_service::config
 
-  simp_pki_service::directory_server { 'simp-pki-ds':
-    dirsrv_base_dn       => $dirsrv_base_dn,
-    dirsrv_root_dn       => $dirsrv_root_dn,
-    admin_password       => $admin_password,
-    enable_admin_service => $dirsrv_enable_admin_service,
-    listen_address       => $dirsrv_listen_address
-  }
+  simp_pki_service::directory_server { 'simp-pki-ds': * => $ds_config }
 
   $_cas = deep_merge($cas, $custom_cas)
 
   keys($_cas).each |String $ca_id| {
     if $_cas[$ca_id]['root_ca'] {
       simp_pki_service::ca { $ca_id:
-        admin_password                 => $admin_password,
-        http_port                      => $_cas[$ca_id]['http_port'],
-        https_port                     => $_cas[$ca_id]['https_port'],
-        dirsrv_bind_dn                 => $dirsrv_root_dn,
-        tomcat_ajp_port                => $_cas[$ca_id]['tomcat_ajp_port'],
-        tomcat_server_port             => $_cas[$ca_id]['tomcat_server_port'],
-        root_ca                        => $_cas[$ca_id]['root_ca'],
-        pki_security_domain            => $pki_security_domain,
-        pki_security_domain_https_port => $_cas[$ca_id]['https_port'],
-        require                        => Simp_pki_service::Directory_server['simp-pki-ds'],
-        notify                         => Simp_pki_service::Ca::Service[$ca_id]
+        dirsrv_bind_dn       => $ds_config['root_dn'],
+        dirsrv_bind_password => $ds_config['admin_password'],
+        *                    => $_cas[$ca_id]
       }
+
+      Simp_pki_service::Directory_server['simp-pki-ds'] -> Simp_pki_service::Ca[$ca_id]
     }
     else {
       simp_pki_service::ca { $ca_id:
-        admin_password                 => $admin_password,
-        http_port                      => $_cas[$ca_id]['http_port'],
-        https_port                     => $_cas[$ca_id]['https_port'],
-        tomcat_ajp_port                => $_cas[$ca_id]['tomcat_ajp_port'],
-        tomcat_server_port             => $_cas[$ca_id]['tomcat_server_port'],
-        dirsrv_bind_dn                 => $dirsrv_root_dn,
-        pki_security_domain            => $pki_security_domain,
+        dirsrv_bind_dn                 => $ds_config['root_dn'],
+        dirsrv_bind_password           => $ds_config['admin_password'],
+        pki_security_domain            => $_cas[$_cas[$ca_id]['parent_ca']]['pki_security_domain'],
+        pki_security_domain_user       => $_cas[$_cas[$ca_id]['parent_ca']]['admin_user'],
+        pki_security_domain_password   => $_cas[$_cas[$ca_id]['parent_ca']]['admin_password'],
         pki_security_domain_https_port => $_cas[$_cas[$ca_id]['parent_ca']]['https_port'],
-        notify                         => Simp_pki_service::Ca::Service[$ca_id]
-      }
-    }
-
-    simp_pki_service::ca::service { $ca_id:
-      port => $_cas[$ca_id]['https_port']
-    }
-
-    if $_cas[$ca_id]['root_ca'] {
-      $_kra_security_domain = $pki_security_domain
-    }
-    else {
-      #$_kra_security_domain = "${pki_security_domain}-${ca_id}"
-      $_kra_security_domain = $pki_security_domain
-    }
-
-    unless ($_cas[$ca_id]['enable_kra'] == false) {
-      simp_pki_service::kra { $ca_id:
-        admin_password      => $admin_password,
-        http_port           => $_cas[$ca_id]['http_port'],
-        https_port          => $_cas[$ca_id]['https_port'],
-        dirsrv_bind_dn      => $dirsrv_root_dn,
-        pki_security_domain => $_kra_security_domain,
-        ca_hostname         => $facts['fqdn'],
-        ca_port             => $_cas[$ca_id]['https_port'],
-        require             => Simp_pki_service::Ca::Service[$ca_id],
-        tomcat_ajp_port     => $_cas[$ca_id]['tomcat_ajp_port'],
-        tomcat_server_port  => $_cas[$ca_id]['tomcat_server_port']
-      }
-    }
-
-    if $_cas[$ca_id]['parent_ca'] {
-      Simp_pki_service::Ca[$_cas[$ca_id]['parent_ca']] -> Simp_pki_service::Ca[$ca_id]
-      unless ($_cas[$ca_id]['enable_kra'] == false) {
-        Simp_pki_service::Ca[$_cas[$ca_id]['parent_ca']] -> Simp_pki_service::Kra[$ca_id]
-      }
-    }
-
-    if $_cas[$ca_id]['debug_level'] {
-      simp_pki_service::dogtag::config_item { "Enable debug on ${ca_id}":
-        ca_id => $ca_id,
-        key   => 'debug.enabled',
-        value => true
-      }
-      simp_pki_service::dogtag::config_item { "Set debug level on ${ca_id}":
-        ca_id => $ca_id,
-        key   => 'debug.level',
-        value => $_cas[$ca_id]['debug_level']
-      }
-    }
-    else {
-      simp_pki_service::dogtag::config_item { "Disable debug on ${ca_id}":
-        ca_id => $ca_id,
-        key   => 'debug.enabled',
-        value => false
-      }
-    }
-
-    if $_cas[$ca_id]['enable_scep'] {
-      simp_pki_service::dogtag::config_item { "Enable SCEP on ${ca_id}":
-        ca_id => $ca_id,
-        key   => 'ca.scep.enable',
-        value => true
-      }
-
-      simp_pki_service::dogtag::config_item { "Disable FlatFileAuth defer on ${ca_id}":
-        ca_id => $ca_id,
-        key   => 'auths.instance.flatFileAuth.deferOnFailure',
-        value => false
-      }
-    }
-    else {
-      simp_pki_service::dogtag::config_item { "Disable SCEP on ${ca_id}":
-        ca_id => $ca_id,
-        key   => 'ca.scep.enable',
-        value => false
-      }
-
-      simp_pki_service::dogtag::config_item { "Enable FlatFileAuth defer on ${ca_id}":
-        ca_id => $ca_id,
-        key   => 'auths.instance.flatFileAuth.deferOnFailure',
-        value => true
+        *                              => $_cas[$ca_id],
       }
     }
   }

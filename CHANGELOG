@@ -1,3 +1,6 @@
+* Mon Feb 12 2018 Trevor Vaughan <tvaughan@onyxpoint.com> - 0.1.0
+- First cut of a working Dogtag setup
+
 * Mon Jan 29 2018 SIMP Team <simp-project.com> - 0.0.1
 - This is the initial code for a `simp_pki_service` module, which is a
   SIMP-oriented installation of the Dogtag Certificate System.

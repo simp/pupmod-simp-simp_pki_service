@@ -1,7 +1,19 @@
+# **NOTE: THIS IS A [PRIVATE](https://github.com/puppetlabs/puppetlabs-stdlib#assert_private) DEFINED TYPE**
+#
+# Start a CA service on the given port and wait until the service has
+# successfully started or the timeout is reached.
+#
+# @param port
+#   The port upon which to listen
+#
+# @param timeout
+#   How long to wait, in seconds, for the daemon to start
 define simp_pki_service::ca::service (
-  $port,
-  $timeout = 5
+  Simplib::Port $port,
+  Integer[1]    $timeout = 5
 ){
+  assert_private()
+
   service { "pki-tomcatd@${name}":
     ensure     => 'running',
     enable     => true,

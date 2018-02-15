@@ -17,6 +17,8 @@
 /pkg/
 /spec/fixtures/manifests/
 /spec/fixtures/modules/
+!/spec/hieradata/default.yaml
+!/spec/fixtures/site.pp
 /tmp/
 /vendor/
 /convert_report.txt

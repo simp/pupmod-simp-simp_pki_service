@@ -1,7 +1,4 @@
 ---
-simp_pki_service::pki_security_domain: 'SIMP'
-simp_pki_service::dirsrv_root_dn: "cn=%{lookup('simp_pki_service::pki_security_domain')} Directory Manager"
-simp_pki_service::config::generated_config_dir: '/root/.dogtag/generated_configs'
 simp_pki_service::directory_server::config::attributes_requiring_restart:
   - nsslapd-changelogdir
   - nsslapd-changelogmaxage

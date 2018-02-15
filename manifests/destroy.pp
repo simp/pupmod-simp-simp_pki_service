@@ -1,9 +1,23 @@
-# $name is the server_identifier that you want to remove
-# 'pki-simp' is the module default
+# Removes all instances of a given CA and/or CA stack to optionally include the
+# 389 Directory Server
+#
+# @example Completely wipe the default module setup
+#   puppet apply -e 'simp_pki_service::destroy { "simp-puppet-pki": }'
+#   puppet apply -e 'simp_pki_service::destroy { "simp-site-pki": }'
+#   puppet apply -e 'simp_pki_service::destroy { "simp-pki-root": remove_dirsrv => true }'
+#
+# @option name [String]
+#   The server identifier that you want to remove
+#
+# @param remove_dirsrv
+#   Also remove the module default 389DS installation
+#
+# @param security_domain
+#   The security domain to target
+#
 define simp_pki_service::destroy (
   $remove_dirsrv = false,
-  $security_domain = 'SIMP',
-  $security_domain_passfile = "/root/.dogtag/${name}/ca/pkcs12_password.conf"
+  $security_domain = 'SIMP'
 ) {
 
   exec { "Remove ${name} KRA":
@@ -25,8 +39,8 @@ define simp_pki_service::destroy (
 
   if $remove_dirsrv {
     exec { 'Remove DS':
-      command => "/sbin/remove-ds-admin.pl -a -i slapd-simp-pki-ds || /sbin/remove-ds.pl -a -i slapd-simp-pki-ds",
-      onlyif  => "/bin/test -d /var/lib/dirsrv/slapd-simp-pki-ds"
+      command => '/sbin/remove-ds-admin.pl -a -i slapd-simp-pki-ds || /sbin/remove-ds.pl -a -i slapd-simp-pki-ds',
+      onlyif  => '/bin/test -d /var/lib/dirsrv/slapd-simp-pki-ds'
     }
   }
 }

@@ -121,8 +121,9 @@ regenerated.
 ### The simp-puppet-pki subordinate CA
 
 This CA is the new root for all `puppet` operations in the infrastructure. The
-`puppet` CA will no longer be used and certificates from this new CA will be
-used in place of the traditional `puppet` certificates in accordance with the
+goal of this is that the `puppet` CA will no longer be used and certificates
+from this new CA will be used in place of the traditional `puppet` certificates
+in accordance with the
 [External CA Support](https://puppet.com/docs/puppet/latest/config_ssl_external_ca.html)
 documentation from Puppet, Inc.
 
@@ -295,7 +296,7 @@ time use, password that will be used by the client during enrollment.
 **Example**
 
     UID:1.2.3.4
-    PWD:my_password
+    PWD:my_one_time_password
 
 ---
 

@@ -12,7 +12,7 @@ pki_security_domain_password=<%= @pki_security_domain_password %>
 
 pki_ds_bind_dn=<%= @dirsrv_bind_dn %>
 pki_ds_database=<%= @name %>-ca
-pki_ds_password=<%= @admin_password %>
+pki_ds_password=<%= @dirsrv_bind_password%>
 
 [CA]
 pki_ds_hostname=127.0.0.1
@@ -23,8 +23,10 @@ pki_client_pkcs12_password=<%= @admin_password %>
 
 <% unless @root_ca -%>
 pki_subordinate=True
+<% if @create_subordinate_security_domain -%>
 pki_subordinate_create_new_security_domain=True
 pki_subordinate_security_domain_name=<%= @pki_security_domain + '-' + @name %>
+<% end -%>
 pki_issuing_ca_hostname=<%= @pki_security_domain_hostname %>
 pki_issuing_ca_https_port=<%= @pki_security_domain_https_port %>
 <% end -%>

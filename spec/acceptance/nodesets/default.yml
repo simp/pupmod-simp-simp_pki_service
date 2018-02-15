@@ -41,7 +41,5 @@ HOSTS:
 CONFIG:
   log_level: verbose
   type:      aio
-  vagrant_memsize: 256
-  ssh:
-    keys: [ '/home/thanos/.ssh/kw_id_rsa' ]
+  vagrant_memsize: 512
   # vb_gui: true

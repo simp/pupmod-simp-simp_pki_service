@@ -7,7 +7,7 @@
 #   puppet apply -e 'simp_pki_service::destroy { "simp-pki-root": remove_dirsrv => true }'
 #
 # @option name [String]
-#   The server_identifier that you want to remove
+#   The server identifier that you want to remove
 #
 # @param remove_dirsrv
 #   Also remove the module default 389DS installation

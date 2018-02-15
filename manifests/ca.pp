@@ -96,7 +96,7 @@ define simp_pki_service::ca (
   Boolean                          $enable_scep                        = false,
   Optional[String[1]]              $parent_ca                          = undef,
   Integer[0,10]                    $debug_level                        = 10,
-  Simplib::PackageEnsure           $package_ensure                     = 'installed'
+  Simplib::PackageEnsure           $package_ensure                     = simplib::lookup('simp_options::package_ensure', { 'default_value'  => 'installed' })
 ){
   include simp_pki_service::config
 

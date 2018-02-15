@@ -26,11 +26,13 @@ before_install:
 
 jobs:
   allow_failures:
+    # https://tickets.puppetlabs.com/browse/PUP-8418
     - env: STRICT_VARIABLES=yes TRUSTED_NODE_DATA=yes PUPPET_VERSION="~> 5.0"
 
   include:
     - stage: check
-      rvm: 2.1.9
+      rvm: 2.4.1
+      env: STRICT_VARIABLES=yes TRUSTED_NODE_DATA=yes PUPPET_VERSION="~> 5"
       script:
         - bundle exec rake check:dot_underscore
         - bundle exec rake check:test_file
@@ -38,9 +40,11 @@ jobs:
         - bundle exec rake metadata_lint
         - bundle exec rake pkg:compare_latest_tag
         - bundle exec rake pkg:create_tag_changelog
+        - bundle exec rake lint
+        - bundle exec puppet module build
 
     - stage: spec
-      rvm: 2.1.9
+      rvm: 2.4.1
       env: STRICT_VARIABLES=yes TRUSTED_NODE_DATA=yes PUPPET_VERSION="~> 5.0"
       script:
         - bundle exec rake spec
@@ -59,24 +63,18 @@ jobs:
 
     - stage: spec
       rvm: 2.1.9
-      env: STRICT_VARIABLES=yes TRUSTED_NODE_DATA=yes PUPPET_VERSION="~> 4.8.2"
-      script:
-        - bundle exec rake spec
-
-    - stage: spec
-      rvm: 2.1.9
       env: STRICT_VARIABLES=yes TRUSTED_NODE_DATA=yes PUPPET_VERSION="~> 4.7.0"
       script:
         - bundle exec rake spec
 
-    # This needs to be last since we have an acceptance test
     - stage: deploy
-      rvm: 2.1.9
+      rvm: 2.4.1
       script:
         - true
       before_deploy:
         - "export PUPMOD_METADATA_VERSION=`ruby -r json -e \"puts JSON.parse(File.read('metadata.json')).fetch('version')\"`"
         - '[[ $TRAVIS_TAG =~ ^simp-${PUPMOD_METADATA_VERSION}$|^${PUPMOD_METADATA_VERSION}$ ]]'
+
       deploy:
         - provider: releases
           api_key:
@@ -91,5 +89,5 @@ jobs:
             secure: ""
           on:
             tags: true
-            rvm: 2.1.9
+            rvm: 2.4.1
             condition: '($SKIP_FORGE_PUBLISH != true)'

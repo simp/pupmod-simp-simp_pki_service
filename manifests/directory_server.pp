@@ -50,7 +50,7 @@ define simp_pki_service::directory_server (
   Simplib::Port          $admin_service_port           = 9830,
   String[1]              $service_user                 = 'nobody',
   String[1]              $service_group                = 'nobody',
-  Simplib::PackageEnsure $package_ensure               = 'installed'
+  Simplib::PackageEnsure $package_ensure               = simplib::lookup('simp_options::package_ensure', { 'default_value'  => 'installed' })
 ){
   include simp_pki_service::config
 

@@ -73,8 +73,8 @@ define simp_pki_service::kra (
   String[1]                        $admin_password,
   Simplib::Hostname                $ca_hostname,
   Simplib::Port                    $ca_port,
-  String[1]                        $admin_user = 'caadmin',
-  Simplib::PackageEnsure           $package_ensure       = 'installed'
+  String[1]                        $admin_user                      = 'caadmin',
+  Simplib::PackageEnsure           $package_ensure                  = simplib::lookup('simp_options::package_ensure', { 'default_value'  => 'installed' })
 ){
   assert_private()
 

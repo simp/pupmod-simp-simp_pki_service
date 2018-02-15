@@ -17,6 +17,8 @@
 #   A user-provided Hash of additional CA entries that are passed directly into
 #   the ``simp_pki_service::ca`` defined type
 #
+#     * NOTE: These will be **deep merged** into the regular ``$cas`` parameter
+#
 # @param enable_haveged
 #   Enable the HAVEGEd entropy collection daemon
 #
@@ -60,7 +62,7 @@ class simp_pki_service (
     }
   },
   Hash                             $custom_cas                   = {},
-  Boolean                          $enable_haveged               = true
+  Boolean                          $enable_haveged               = simplib::lookup('simp_options::haveged', { 'default_value'  => true })
 ){
   if $enable_haveged { include haveged }
   include simp_pki_service::config

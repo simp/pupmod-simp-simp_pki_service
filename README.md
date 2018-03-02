@@ -238,25 +238,31 @@ for all three aliased CAs.
 [root@ca ~]# mkdir crt_tmp
 [root@ca ~]# cd crt_tmp
 
-# Obtain the PKCS12 certificate chain from the server
-# This is good to host somewhere public to provide to your clients!
+# Obtain the PKCS12 certificates from the server
+# This will be ALL certificates!
 
-[root@ca crt_tmp]# pki-server ca-cert-chain-export -i simp-site-pki \
---pkcs12-file simp-site-pki-ca-chain.p12 \
+[root@ca crt_tmp]# pki-server instance-cert-export -i simp-site-pki \
+--no-key \
+--pkcs12-file simp-site-pki-certs.p12 \
 --pkcs12-password-file $HOME/.dogtag/simp-site-pki/ca/password.conf
 
 # Generate a PEM file containing all of the CA certificate chain from the PKCS12 file
-# This is also good to provide to your clients
 
-[root@ca crt_tmp]# openssl pkcs12 -in simp-site-pki-ca-chain.p12 \
+[root@ca crt_tmp]# openssl pkcs12 -in simp-site-pki-certs.p12 \
 -passin file:$HOME/.dogtag/simp-site-pki/ca/password.conf \
--out simp-site-pki-ca-chain.pem
+-out simp-site-pki-certs.pem
+
+# Remove everything after the root and sub CA certificates
+# You may want to post this resulting file for your clients
+
+[root@ca crt_tmp]# awk -v n=2 '{print}; /-----END CERTIFICATE-----/{n--; if (!n) exit}' \
+simp-site-pki-certs.pem > simp-site-pki-ca-chain.pem
 
 # Split the PEM file out into separate PEM files for each CA
-# This is done to get them into individual PKCS12 files for import into your NSS database
+# This is done to get them into into your NSS database
 #
 # You may also want to provide these to your clients for download but the
-# single file or PKCS12 version is generally preferred
+# single file version is generally preferred
 
 [root@ca crt_tmp]# mkdir ca_certs
 [root@ca crt_tmp]# awk '/friendlyName:/{$1="";sub($1 OFS, "");n=$0} \
@@ -315,20 +321,26 @@ NOTE: You do **NOT** need to restart anything after editing the file!
    [root@ca ~]# systemctl enable certmonger
    ```
 
-2. Obtain the public certificate for the CA that you will be connecting to. In
+2. Obtain the **root** certificate for the CA that you will be connecting to. In
    this case, we'll assume that you've saved it to a file named
-   `/etc/pki/site-pki-ca.pem` with SELinux context `cert_t`.
+   `/etc/pki/simp-pki-root-ca.pem` with SELinux context `cert_t`.
 
-3. Obtain the full public certificate chain for the CA that you will be
-   connecting to. In this case, we'll assume that you've saved it to a file
-   named `/etc/pki/site-pki-ca-chain.pem` with SELinux context `cert_t`.
+   * This is probably called `CA Signing Certificate - SIMP.pem` in the
+     `ca_certs` directory if you followed the steps outlined above.
+
+3. Obtain the certificate chain for the CA that you will be connecting to. In
+   this case, we'll assume that you've saved it to a file named
+   `/etc/pki/simp-site-pki-ca.pem` with SELinux context `cert_t`.
+
+   * This is probably called `caSigningCert cert-simp-site-pki CA.pem` in the
+     `ca_certs` directory if you followed the steps outlined above.
 
 4. Add the CA to `certmonger`:
 
    ```bash
    [root@ca ~]# getcert add-scep-ca -c SIMP_Site \
      -u https://ca.your.domain:8443/ca/cgi-bin/pkiclient.exe \
-     -R /etc/pki/site-pki-ca.pem
+     -R /etc/pki/simp-pki-root-ca.pem -I /etc/pki/simp-site-pki-ca.pem
    ```
 
 5. Ensure that your default `nssdb` space exists

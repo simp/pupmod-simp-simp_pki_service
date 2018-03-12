@@ -13,6 +13,9 @@
 #   A Hash of CA entries that are passed directly into the
 #   ``simp_pki_service::ca`` defined type
 #
+#   * Hash keys are the parameters in ``simp_pki_service::ca``
+#   * Nested Sub CAs are currently not supported
+#
 # @param custom_cas
 #   A user-provided Hash of additional CA entries that are passed directly into
 #   the ``simp_pki_service::ca`` defined type

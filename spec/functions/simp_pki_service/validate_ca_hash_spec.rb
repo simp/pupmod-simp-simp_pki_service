@@ -43,7 +43,7 @@ describe 'simp_pki_service::validate_ca_hash' do
     end
   end
 
-  context 'without an invalid defined parent CA' do
+  context 'with an invalid defined parent CA' do
     let(:ca_hash) {{
       'pki-root' => {
         'root_ca' => true
@@ -59,4 +59,23 @@ describe 'simp_pki_service::validate_ca_hash' do
     end
   end
 
+  context 'with nested Sub CAs' do
+    let(:ca_hash) {{
+      'pki-root' => {
+        'root_ca' => true
+      },
+      'pki-sub'  => {
+        'root_ca'   => false,
+        'parent_ca' => 'pki-root'
+      },
+      'pki-sub2'  => {
+        'root_ca'   => false,
+        'parent_ca' => 'pki-sub'
+      }
+    }}
+
+    it do
+      is_expected.to run.with_params(ca_hash).and_raise_error( /pki-sub.*do not have valid parent CAs/)
+    end
+  end
 end

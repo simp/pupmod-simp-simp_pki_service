@@ -15,6 +15,27 @@ describe 'simp_pki_service::validate_ca_hash' do
     it { is_expected.to run.with_params(ca_hash) }
   end
 
+  context 'with a valid hash with multiple root CAs' do
+    let(:ca_hash) {{
+      'pki-root' => {
+        'root_ca' => true
+      },
+      'pki-root2' => {
+        'root_ca' => true
+      },
+      'pki-sub'  => {
+        'root_ca'   => false,
+        'parent_ca' => 'pki-root'
+      },
+      'pki-sub2'  => {
+        'root_ca'   => false,
+        'parent_ca' => 'pki-root2'
+      }
+    }}
+
+    it { is_expected.to run.with_params(ca_hash) }
+  end
+
   context 'with a missing root CA' do
     let(:ca_hash) {{
       'pki-sub'  => {

@@ -13,6 +13,9 @@
 #   A Hash of CA entries that are passed directly into the
 #   ``simp_pki_service::ca`` defined type
 #
+#   * Hash keys are the parameters in ``simp_pki_service::ca``
+#   * Nested Sub CAs are currently not supported
+#
 # @param custom_cas
 #   A user-provided Hash of additional CA entries that are passed directly into
 #   the ``simp_pki_service::ca`` defined type
@@ -29,7 +32,7 @@ class simp_pki_service (
     'base_dn'        => sprintf('ou=%s,%s',$pki_security_domain, simplib::ldap::domain_to_dn($facts['domain'], false)),
     'admin_password' => simplib::passgen('389-ds-simp-pki', {'length' => 64, 'complexity' => 0 })
   },
-  Hash                             $cas                          = {
+  Hash[String[1], Hash]            $cas                          = {
     'simp-pki-root' => {
       'root_ca'             => true,
       'pki_security_domain' => $pki_security_domain,
@@ -70,6 +73,8 @@ class simp_pki_service (
   simp_pki_service::directory_server { 'simp-pki-ds': * => $ds_config }
 
   $_cas = deep_merge($cas, $custom_cas)
+
+  simp_pki_service::validate_ca_hash($_cas)
 
   keys($_cas).each |String $ca_id| {
     if $_cas[$ca_id]['root_ca'] {

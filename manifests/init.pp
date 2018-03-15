@@ -46,25 +46,29 @@ class simp_pki_service (
       'tomcat_server_port' => 4507
     },
     'simp-puppet-pki' => {
-      'enable_kra'          => true,
-      'enable_scep'         => true,
-      'http_port'           => 5508,
-      'https_port'          => 5509,
-      'tomcat_ajp_port'     => 5506,
-      'tomcat_server_port'  => 5507,
-      'parent_ca'           => 'simp-pki-root'
+      'enable_kra'         => true,
+      'http_port'          => 5508,
+      'https_port'         => 5509,
+      'tomcat_ajp_port'    => 5506,
+      'tomcat_server_port' => 5507,
+      'parent_ca'          => 'simp-pki-root',
+      'ca_config'          => {
+        'ca.scep.enable' => true
+      }
     },
     'simp-site-pki' => {
-      'enable_kra'          => true,
-      'enable_scep'         => true,
-      'http_port'           => 8080,
-      'https_port'          => 8443,
-      'tomcat_ajp_port'     => 8440,
-      'tomcat_server_port'  => 8441,
-      'parent_ca'           => 'simp-pki-root'
+      'enable_kra'         => true,
+      'http_port'          => 8080,
+      'https_port'         => 8443,
+      'tomcat_ajp_port'    => 8440,
+      'tomcat_server_port' => 8441,
+      'parent_ca'          => 'simp-pki-root',
+      'ca_config'          => {
+        'ca.scep.enable' => true
+      }
     }
   },
-  Hash                             $custom_cas                   = {},
+  Hash[String[1], Hash]            $custom_cas                   = {},
   Boolean                          $enable_haveged               = simplib::lookup('simp_options::haveged', { 'default_value'  => true })
 ){
   if $enable_haveged { include haveged }

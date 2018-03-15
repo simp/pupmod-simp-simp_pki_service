@@ -12,7 +12,7 @@
 #   The secure port
 #
 # @param tomcat_ajp_port
-#   The Apache JServ Protocl port
+#   The Apache JServ Protocol port
 #
 # @param tomcat_server_port
 #   Port used to shutdown Tomcat
@@ -53,6 +53,12 @@
 # @param admin_user
 #   The administrative user of the CA that this KRA is bound to
 #
+# @param kra_config
+#   A `key`/`value` pair set that will be fed directly into the KRA `CS.cfg`
+#
+# @param service_timeout
+#   The number of seconds to wait for the service to listen on `http_port`
+#
 # @param package_ensure
 #   What to do regarding package installation
 #
@@ -74,6 +80,8 @@ define simp_pki_service::kra (
   Simplib::Hostname                $ca_hostname,
   Simplib::Port                    $ca_port,
   String[1]                        $admin_user                      = 'caadmin',
+  Hash                             $kra_config                      = {},
+  Integer[1]                       $service_timeout                 = 5,
   Simplib::PackageEnsure           $package_ensure                  = simplib::lookup('simp_options::package_ensure', { 'default_value'  => 'installed' })
 ){
   assert_private()
@@ -137,5 +145,14 @@ define simp_pki_service::kra (
     command => "/sbin/pkispawn -f ${_kra_config_file} -s KRA || ( /sbin/pkidestroy -i ${name} -s KRA >& /dev/null && exit 1 )",
     creates => "/etc/sysconfig/pki/tomcat/${name}/kra/manifest",
     require => Package['pki-kra']
+  }
+
+  simp_pki_service::ca::config_item { "Update config for KRA ${name}":
+    ca_id       => $name,
+    port        => $http_port,
+    timeout     => $service_timeout,
+    config_hash => $kra_config,
+    subsystem   => 'kra',
+    require     => Exec["Configure SIMP ${name} KRA"]
   }
 }

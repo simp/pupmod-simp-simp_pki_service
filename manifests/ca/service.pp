@@ -18,16 +18,11 @@ define simp_pki_service::ca::service (
     ensure     => 'running',
     enable     => true,
     hasrestart => true,
-    notify     => Exec["${name} wait for tomcat service"]
+    notify     => Simp_pki_service::Ca::Wait_for_service["CA ${name} on port ${port}"]
   }
 
-  $_port_check = "ss -tln | awk '{ print \$4 }' | rev | cut -f1 -d':' | rev | grep -qe '^${port}\$'"
-
-  exec { "${name} wait for tomcat service":
-    command     => $_port_check,
-    tries       => $timeout,
-    try_sleep   => 2,
-    refreshonly => true,
-    path        => ['/bin', '/sbin']
-  }
+  ensure_resource('simp_pki_service::ca::wait_for_service', "CA ${name} on port ${port}", {
+    port    => $port,
+    timeout => $timeout
+  })
 }

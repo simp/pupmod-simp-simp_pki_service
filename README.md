@@ -238,25 +238,18 @@ for all three aliased CAs.
 [root@ca ~]# mkdir crt_tmp
 [root@ca ~]# cd crt_tmp
 
-# Obtain the PKCS12 certificates from the server
-# This will be ALL certificates!
+# Obtain the PKCS12 certificate chain from the server
 
-[root@ca crt_tmp]# pki-server instance-cert-export -i simp-site-pki \
+[root@ca crt_tmp]# pki-server subsystem-cert-export ca signing -i simp-site-pki \
 --no-key \
 --pkcs12-file simp-site-pki-certs.p12 \
 --pkcs12-password-file $HOME/.dogtag/simp-site-pki/ca/password.conf
 
-# Generate a PEM file containing all of the CA certificate chain from the PKCS12 file
+# Generate a PEM file containing the CA certificate chain from the PKCS12 file
 
 [root@ca crt_tmp]# openssl pkcs12 -in simp-site-pki-certs.p12 \
 -passin file:$HOME/.dogtag/simp-site-pki/ca/password.conf \
 -out simp-site-pki-certs.pem
-
-# Remove everything after the root and sub CA certificates
-# You may want to post this resulting file for your clients
-
-[root@ca crt_tmp]# awk -v n=2 '{print}; /-----END CERTIFICATE-----/{n--; if (!n) exit}' \
-simp-site-pki-certs.pem > simp-site-pki-ca-chain.pem
 
 # Split the PEM file out into separate PEM files for each CA
 # This is done to get them into into your NSS database

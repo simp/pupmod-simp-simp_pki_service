@@ -55,21 +55,33 @@
 # @param enable_kra
 #   Enable the KRA subsystem for this CA
 #
-# @param enable_scep
-#   Enable the SCEP responder in the KRA
-#
-#     * Has no functional effect if ``$enable_kra`` is ``false``
-#
 # @param parent_ca
 #   The root CA for this CA
 #
 #     * Should not be set if this system is a root CA
+#
+# @param ca_config
+#   A 'one-to-one' configuration Hash for the CA
+#
+#   * Each `key`/`value` pair is directly mapped into the CA's `CS.cfg` file
+#     without type checking
+#   * For example, to enable the SCEP responder, you would set `ca.scep.enable`
+#     to `true`
+#
+# @param kra_config
+#   A 'one-to-one' configuration Hash for the KRA
+#
+#   * Each `key`/`value` pair is directly mapped into the KRA's `CS.cfg` file
+#     without type checking
 #
 # @param debug_level
 #   Set the debug level of the CA and KRA
 #
 #     * 10 => off
 #     * 0  => highest level of debugging
+#
+# @param service_timeout
+#   The number of seconds to wait for the service to listen on `http_port`
 #
 # @param package_ensure
 #   What to do regarding package installation
@@ -93,9 +105,11 @@ define simp_pki_service::ca (
   String[1]                        $pki_security_domain_password       = $admin_password,
   Boolean                          $create_subordinate_security_domain = false,
   Boolean                          $enable_kra                         = false,
-  Boolean                          $enable_scep                        = false,
   Optional[String[1]]              $parent_ca                          = undef,
+  Hash                             $ca_config                          = {},
+  Hash                             $kra_config                         = {},
   Integer[0,10]                    $debug_level                        = 10,
+  Integer[1]                       $service_timeout                    = 5,
   Simplib::PackageEnsure           $package_ensure                     = simplib::lookup('simp_options::package_ensure', { 'default_value'  => 'installed' })
 ){
   include simp_pki_service::config
@@ -125,9 +139,12 @@ define simp_pki_service::ca (
     notify  => Simp_pki_service::Ca::Service[$name]
   }
 
-  simp_pki_service::ca::service { $name: port => $https_port }
+  simp_pki_service::ca::service { $name:
+    port    => $https_port,
+    timeout => $service_timeout
+  }
 
-  if $enable_kra {
+  if $enable_kra or ( $ca_config['ca.scep.enable'] == true ) {
     if $create_subordinate_security_domain {
       $_kra_pki_security_domain_hostname   = $facts['fqdn']
       $_kra_pki_security_domain_https_port = $https_port
@@ -157,59 +174,65 @@ define simp_pki_service::ca (
       ca_hostname                    => $facts['fqdn'],
       ca_port                        => $https_port,
       admin_user                     => $admin_user,
+      service_timeout                => $service_timeout,
+      kra_config                     => $kra_config,
       package_ensure                 => $package_ensure,
       require                        => Simp_pki_service::Ca::Service[$name]
     }
   }
 
-  if $enable_scep {
-    simp_pki_service::dogtag::config_item { "Enable SCEP on ${name}":
-      ca_id   => $name,
-      key     => 'ca.scep.enable',
-      value   => true,
-      require => Exec["Configure SIMP ${name} CA"]
+  if $ca_config['ca.scep.enable'] == true {
+    # Updating auths.instance.flatFileAuth.deferOnFailure is required by
+    # default but the user may want to override it
+    simp_pki_service::ca::config_item { "Update config for CA ${name}":
+      ca_id       => $name,
+      port        => $http_port,
+      timeout     => $service_timeout,
+      config_hash => merge({ 'auths.instance.flatFileAuth.deferOnFailure' => false }, $ca_config),
+      require     => Exec["Configure SIMP ${name} CA"]
     }
 
-    simp_pki_service::dogtag::config_item { "Disable FlatFileAuth defer on ${name}":
-      ca_id   => $name,
-      key     => 'auths.instance.flatFileAuth.deferOnFailure',
-      value   => false,
-      require => Exec["Configure SIMP ${name} CA"]
-    }
-  }
-  else {
-    simp_pki_service::dogtag::config_item { "Disable SCEP on ${name}":
-      ca_id   => $name,
-      key     => 'ca.scep.enable',
-      value   => false,
-      require => Exec["Configure SIMP ${name} CA"]
-    }
-
-    simp_pki_service::dogtag::config_item { "Enable FlatFileAuth defer on ${name}":
-      ca_id   => $name,
-      key     => 'auths.instance.flatFileAuth.deferOnFailure',
-      value   => true,
-      require => Exec["Configure SIMP ${name} CA"]
+    # Update the 'carouterCert.cfg' to allow for the provisioning of server
+    # certificates by default.
+    simp_pki_service::ca::config_item { "Change Router profile to Server profile for CA ${name}":
+      target      => "/var/lib/pki/${name}/ca/profiles/caRouterCert.cfg",
+      ca_id       => $name,
+      port        => $http_port,
+      timeout     => $service_timeout,
+      config_hash => {
+        'desc'                                                                 => 'This certificate profile is for enrolling server certificates via SCEP.',
+        'name'                                                                 => 'One Time Pin Server Certificate Enrollment',
+        'policyset.serverCertSet.6.constraint.params.keyUsageDataEncipherment' => true,
+        'policyset.serverCertSet.6.default.params.keyUsageDataEncipherment'    => true,
+        'policyset.serverCertSet.7.default.params.exKeyUsageOIDs'              => '1.3.6.1.5.5.7.3.1,1.3.6.1.5.5.7.3.2,1.3.6.1.5.5.7.3.4'
+      },
+      require     => Exec["Configure SIMP ${name} CA"]
     }
   }
 
   if $debug_level {
-    simp_pki_service::dogtag::config_item { "Enable debug on ${name}":
+    simp_pki_service::ca::config_item { "Enable debug on ${name}":
       ca_id   => $name,
+      port    => $http_port,
+      timeout => $service_timeout,
       key     => 'debug.enabled',
       value   => true,
       require => Exec["Configure SIMP ${name} CA"]
     }
-    simp_pki_service::dogtag::config_item { "Set debug level on ${name}":
+    simp_pki_service::ca::config_item { "Set debug level on ${name}":
       ca_id   => $name,
+      port    => $http_port,
+      timeout => $service_timeout,
       key     => 'debug.level',
       value   => $debug_level,
       require => Exec["Configure SIMP ${name} CA"]
     }
   }
   else {
-    simp_pki_service::dogtag::config_item { "Disable debug on ${name}":
+    simp_pki_service::ca::config_item { "Disable debug on ${name}":
       ca_id   => $name,
+      port    => $http_port,
+      timeout => $service_timeout,
       key     => 'debug.enabled',
       value   => false,
       require => Exec["Configure SIMP ${name} CA"]

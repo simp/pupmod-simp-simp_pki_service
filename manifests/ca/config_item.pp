@@ -1,7 +1,7 @@
 # Set a configuration item in a specific CA instance
 #
 # The ``$subsystem`` and ``$file`` parameters have been pre-set with the most
-# common configuraiton target.
+# common configuration target.
 #
 # @option name
 #   A useful, unique, name for this resource
@@ -24,7 +24,7 @@
 #   * Must be set if `value` is set
 #
 # @param value
-#   The 'value' to which to set the ``$key`` in the configuraiton file
+#   The 'value' to which to set the ``$key`` in the configuration file
 #
 #   * You can set either `config_hash` OR `key` and `value`, but not both
 #   * Must be set if `key` is set

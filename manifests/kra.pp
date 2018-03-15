@@ -12,7 +12,7 @@
 #   The secure port
 #
 # @param tomcat_ajp_port
-#   The Apache JServ Protocl port
+#   The Apache JServ Protocol port
 #
 # @param tomcat_server_port
 #   Port used to shutdown Tomcat

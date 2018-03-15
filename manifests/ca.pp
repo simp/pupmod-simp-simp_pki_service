@@ -195,7 +195,7 @@ define simp_pki_service::ca (
     # Update the 'carouterCert.cfg' to allow for the provisioning of server
     # certificates by default.
     simp_pki_service::ca::config_item { "Change Router profile to Server profile for CA ${name}":
-      target      => "/varlib/pki/${name}/ca/profiles/caRouterCert.cfg",
+      target      => "/var/lib/pki/${name}/ca/profiles/caRouterCert.cfg",
       ca_id       => $name,
       port        => $http_port,
       timeout     => $service_timeout,

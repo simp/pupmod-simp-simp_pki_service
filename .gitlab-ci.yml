@@ -199,6 +199,8 @@ pup6-unit:
 
 # Acceptance tests
 # ==============================================================================
+
+# FIPS and OEL may or may not work at this point but would be nice to know
 pup4.10:
   <<: *pup_4_10
   <<: *acceptance_base
@@ -206,6 +208,7 @@ pup4.10:
     - 'bundle exec rake beaker:suites'
 
 pup4.10-fips:
+  allow_failure: true
   <<: *pup_4_10
   <<: *acceptance_base
   <<: *only_with_SIMP_FULL_MATRIX
@@ -219,21 +222,23 @@ pup5.5.7:
     - 'bundle exec rake beaker:suites'
 
 pup5.5.7-fips:
+  allow_failure: true
   <<: *pup_5_5_7
   <<: *acceptance_base
   script:
     - 'BEAKER_fips=yes bundle exec rake beaker:suites'
 
 pup5.5.7-oel:
+  allow_failure: true
   <<: *pup_5_5_7
   <<: *acceptance_base
   script:
     - 'bundle exec rake beaker:suites[default,oel]'
 
 pup5.5.7-oel-fips:
+  allow_failure: true
   <<: *pup_5_5_7
   <<: *acceptance_base
   <<: *only_with_SIMP_FULL_MATRIX
   script:
     - 'BEAKER_fips=yes bundle exec rake beaker:suites[default,oel]'
-

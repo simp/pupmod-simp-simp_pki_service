@@ -34,6 +34,10 @@
 #
 #   * You can set either `config_hash` OR `key` and `value`, but not both
 #
+# @param value_join
+#   If the `value` is an `Array`, this `String` will be used to join the
+#   elements
+#
 # @param subsystem
 #   The Dogtag Subsystem that is to be managed (lower case)
 #
@@ -48,15 +52,16 @@
 #   The full path to the target file
 #
 define simp_pki_service::ca::config_item (
-  String[1]                                             $ca_id,
-  Simplib::Port                                         $port,
-  Integer[1]                                            $timeout     = 5,
-  Optional[String[1]]                                   $key         = undef,
-  Optional[Variant[String[1], Boolean, Numeric]]        $value       = undef,
-  Hash[String[1], Variant[String[1], Boolean, Numeric]] $config_hash = {},
-  String[1]                                             $subsystem   = 'ca',
-  String[1]                                             $file        = 'CS.cfg',
-  Optional[Stdlib::AbsolutePath]                        $target      = undef
+  String[1]                                      $ca_id,
+  Simplib::Port                                  $port,
+  Integer[1]                                     $timeout     = 5,
+  Optional[String[1]]                            $key         = undef,
+  Optional[Variant[String[1], Boolean, Numeric]] $value       = undef,
+  Simp_pki_service::Ca::ConfigItemHash           $config_hash = {},
+  String[1]                                      $value_join  = ',',
+  String[1]                                      $subsystem   = 'ca',
+  String[1]                                      $file        = 'CS.cfg',
+  Optional[Stdlib::AbsolutePath]                 $target      = undef
 ){
   if (($key =~ NotUndef) and ($value =~ Undef)) or (($key =~ Undef) and ($value =~ NotUndef)) {
     fail('You must provide both `key` and `value`')
@@ -80,10 +85,21 @@ define simp_pki_service::ca::config_item (
   }
 
   unless empty($_config_hash) {
+    $_augeas_commands = $_config_hash.map |$k,$v| {
+      if $v =~ Array {
+        $_v = join($v, $value_join)
+      }
+      else {
+        $_v = $v
+      }
+
+      "set ${k} ${_v}"
+    }
+
     augeas { $name:
       lens    => 'Simplevars.lns',
       incl    => $_target,
-      changes => $_config_hash.map |$k,$v| { "set ${k} ${v}" },
+      changes => $_augeas_commands,
       notify  => Exec["restart CA instance ${ca_id} for ${name}"]
     }
   }

@@ -8,6 +8,7 @@
 HOSTS:
   ca:
     roles:
+      - ca
       - server
       - default
     platform:   el-7-x86_64
@@ -21,29 +22,29 @@ HOSTS:
         gpgkeys:
           - https://getfedora.org/static/352C64E5.txt
 
-# el7-client:
-#   roles:
-#     - client
-#   platform:   el-7-x86_64
-#   box:        centos/7
-#   hypervisor: <%= hypervisor %>
-#   yum_repos:
-#     epel:
-#       url: 'http://download.fedoraproject.org/pub/epel/7/$basearch'
-#       gpgkeys:
-#         - https://getfedora.org/static/352C64E5.txt
+  el7-client:
+    roles:
+      - client
+    platform:   el-7-x86_64
+    box:        centos/7
+    hypervisor: <%= hypervisor %>
+    yum_repos:
+      epel:
+        url: 'http://download.fedoraproject.org/pub/epel/7/$basearch'
+        gpgkeys:
+          - https://getfedora.org/static/352C64E5.txt
 
-# el6-client:
-#   roles:
-#     - client
-#   platform:   el-6-x86_64
-#   box:        centos/6
-#   hypervisor: <%= hypervisor %>
-#   yum_repos:
-#     epel:
-#       url: 'http://download.fedoraproject.org/pub/epel/6/$basearch'
-#       gpgkeys:
-#         - https://getfedora.org/static/0608B895.txt
+  el6-client:
+    roles:
+      - client
+    platform:   el-6-x86_64
+    box:        centos/6
+    hypervisor: <%= hypervisor %>
+    yum_repos:
+      epel:
+        url: 'http://download.fedoraproject.org/pub/epel/6/$basearch'
+        gpgkeys:
+          - https://getfedora.org/static/0608B895.txt
 
 CONFIG:
   log_level: verbose

@@ -90,6 +90,7 @@ define simp_pki_service::kra (
 
   ensure_packages('pki-kra', { ensure => $package_ensure })
 
+  $_fqdn = $facts['fqdn']
   $_kra_config = @("KRA_CONFIG")
     # This file managed by Puppet
     [DEFAULT]
@@ -117,7 +118,7 @@ define simp_pki_service::kra (
     pki_https_port=${https_port}
 
     pki_admin_cert_file=/root/.dogtag/${name}/ca_admin.cert
-    pki_admin_email=kraadmin@${facts['fqdn']}
+    pki_admin_email=kraadmin@${_fqdn}
     pki_admin_name=kraadmin
     pki_admin_nickname=kraadmin
     pki_admin_uid=kraadmin

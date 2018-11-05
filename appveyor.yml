@@ -9,7 +9,7 @@ init:
   - 'mkdir C:\ProgramData\PuppetLabs\hiera && exit 0'
   - 'mkdir C:\ProgramData\PuppetLabs\puppet\var && exit 0'
 environment:
-  PUPPET_VERSION: ~> 4.0
+  PUPPET_VERSION: ~> 5.0
   matrix:
     -
       RUBY_VERSION: 24-x64
@@ -24,11 +24,8 @@ environment:
       RUBY_VERSION: 24-x64
       CHECK: spec
     -
+      PUPPET_VERSION: ~> 4.0
       RUBY_VERSION: 21-x64
-      CHECK: spec
-    -
-      PUPPET_VERSION: ~> 5.0
-      RUBY_VER: 24-x64
       CHECK: spec
 matrix:
   fast_finish: true

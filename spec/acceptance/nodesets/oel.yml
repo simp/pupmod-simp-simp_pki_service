@@ -26,7 +26,7 @@ HOSTS:
 #   roles:
 #     - client
 #   platform:   el-7-x86_64
-#   box:        centos/7
+#   box:        onyxpoint/oel-7-x86_64
 #   box_version: ">= 0.2.0"
 #   hypervisor: <%= hypervisor %>
 #   yum_repos:
@@ -39,7 +39,7 @@ HOSTS:
 #   roles:
 #     - client
 #   platform:   el-6-x86_64
-#   box:        centos/6
+#   box:        onyxpoint/oel-6-x86_64
 #   box_version: ">= 0.2.0"
 #   hypervisor: <%= hypervisor %>
 #   yum_repos:
@@ -47,32 +47,6 @@ HOSTS:
 #       url: 'http://download.fedoraproject.org/pub/epel/6/$basearch'
 #       gpgkeys:
 #         - https://getfedora.org/static/0608B895.txt
-
-
-  oel6:
-    roles:
-      - default
-      - master
-      - client
-    platform:   el-6-x86_64
-    box:        onyxpoint/oel-6-x86_64
-    hypervisor: <%= hypervisor %>
-    yum_repos:
-      epel:
-        mirrorlist: 'https://mirrors.fedoraproject.org/metalink?repo=epel-6&arch=$basearch'
-        gpgkeys:
-          - https://getfedora.org/static/0608B895.txt
-  oel7:
-    roles:
-      - client
-    platform:   el-7-x86_64
-    box:        onyxpoint/oel-7-x86_64
-    hypervisor: <%= hypervisor %>
-    yum_repos:
-      epel:
-        mirrorlist: 'https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch'
-        gpgkeys:
-          - https://getfedora.org/static/352C64E5.txt
 
 CONFIG:
   log_level: verbose

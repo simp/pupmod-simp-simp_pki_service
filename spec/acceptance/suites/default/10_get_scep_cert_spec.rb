@@ -14,7 +14,7 @@ describe 'simp_pki_service' do
     }
   }
 
-  hosts.each do |host|
+  hosts_with_role(hosts, 'ca').each do |host|
     context host do
       ca_metadata.keys.each do |ca|
         context "CA #{ca}" do

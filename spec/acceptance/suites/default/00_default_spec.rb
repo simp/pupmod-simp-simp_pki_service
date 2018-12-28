@@ -44,12 +44,16 @@ describe 'simp_pki_service' do
   }
 
   hosts.each do |host|
-    context host do
+    context "on #{host}" do
       it 'should have a proper FQDN' do
         on(host, "hostname #{fact_on(host, 'fqdn')}")
         on(host, 'hostname -f > /etc/hostname')
       end
+    end
+  end
 
+  hosts_with_role(hosts, 'ca').each do |host|
+    context "on the CA" do
       # Using puppet_apply as a helper
       it 'should work with no errors' do
         set_hieradata_on(host, hieradata)

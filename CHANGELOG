@@ -1,3 +1,10 @@
+* Fri Dec 28 2018 Trevor Vaughan <tvaughan@onyxpoint.com> - 0.2.0
+- Minor breaking changes - Module still **experimental**
+- Fix the configuration variants required for the documented layout
+  - Add acceptance tests for swapping out puppet certificates
+    - This is the "real life" test case outside of just setting up the CA
+      infrastructure
+
 * Mon Nov 05 2018 Liz Nemsick <lnemsick-simp@gmail.com> - 0.1.1
 - Update to Hiera 5
 - Update contribution guide URL in README.md

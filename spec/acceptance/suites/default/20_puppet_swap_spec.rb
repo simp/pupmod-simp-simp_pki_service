@@ -6,8 +6,8 @@ describe 'simp_pki_service' do
 
   ca_metadata = {
     'simp-puppet-pki' => {
-      'http_port'  => 5508,
-      'https_port' => 5509
+      :http_port  => 5508,
+      :https_port => 5509
     }
   }
 
@@ -18,28 +18,19 @@ describe 'simp_pki_service' do
   }
 
   let(:working_dir) { '/root/pki_puppet_cert_dir' }
-  let(:ca) { fact_on(hosts_with_role(hosts, 'ca').first, 'fqdn') }
+  let(:ca_host) { hosts_with_role(hosts, 'ca').first }
+  let(:ca) { fact_on(ca_host, 'fqdn') }
 
   hosts_with_role(hosts, 'ca').each do |host|
-    context "on CA #{host}" do
-      let(:auth_file) { "/var/lib/pki/simp-puppet-pki/ca/conf/flatfile.txt" }
-
-      # NOTE: the flatfile.txt format requires a blank space between entries
-      let(:auth_file_content) {
-        [
-          "UID:127.0.0.1\nPWD:#{fact_on(host, 'fqdn')}",
-          hosts.map { |h| "UID:#{h.ip}\nPWD:#{fact_on(h, 'fqdn')}" }
-        ].flatten.join("\n\n")
-      }
-
-      it 'should have passwords set for SCEP requests from all clients' do
-        create_remote_file( host, auth_file, auth_file_content)
+    context "on the CA server #{host}" do
+      it 'should set one time passwords for simp-puppet-pki SCEP requests from all clients' do
+        create_scep_otps(hosts, host, 'simp-puppet-pki')
       end
     end
   end
 
   hosts_with_role(hosts, 'server').each do |host|
-    context "on server #{host}" do
+    context "on Puppet server #{host}" do
       it 'should have the puppetserver installed' do
         install_package(host, 'puppetserver')
       end
@@ -109,22 +100,25 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
         on(host, "cd #{working_dir} && openssl req -new -sha384 -key #{fqdn}.key -out #{fqdn}.csr -config request.cfg")
       end
 
-      it 'should get the CA certificate chain' do
-        on(host, %{sscep getca -u http://#{ca}:#{ca_metadata['simp-puppet-pki']['http_port']}/ca/cgi-bin/pkiclient.exe -c #{working_dir}/dogtag-ca.crt})
+      it 'should get the simp-puppet-pki CA certificate' do
+        on(host, %{sscep getca -u http://#{ca}:#{ca_metadata['simp-puppet-pki'][:http_port]}/ca/cgi-bin/pkiclient.exe -c #{working_dir}/dogtag-ca.crt -F sha1})
       end
 
       it 'should get the CA certificate chain' do
         # This bunch of nonsense pulls out the entire CA chain into the base
         # format that Puppet expects
-        on(host, %{openssl s_client -host #{ca} -port 5509 -prexit -showcerts 2>/dev/null < /dev/null | awk '{FS="\\n"; RS="-.*CERTIFICATE.*-";}!seen[$0] && $0 ~ /MII/ {print "-----BEGIN CERTIFICATE-----"$0"-----END CERTIFICATE-----"} {++seen[$0]}' > #{working_dir}/dogtag-ca-chain.pem})
+        on(host, %{openssl s_client -host #{ca} -port #{ca_metadata['simp-puppet-pki'][:https_port]} -prexit -showcerts 2>/dev/null < /dev/null | awk '{FS="\\n"; RS="-.*CERTIFICATE.*-";}!seen[$0] && $0 ~ /MII/ {print "-----BEGIN CERTIFICATE-----"$0"-----END CERTIFICATE-----"} {++seen[$0]}' > #{working_dir}/dogtag-ca-chain.pem})
       end
 
       it 'should get the CA CRL' do
-        on(host, %{curl -sk "https://#{ca}:#{ca_metadata['simp-puppet-pki']['https_port']}/ca/ee/ca/getCRL?op=getCRL&crlIssuingPoint=MasterCRL" | openssl crl -inform DER -outform PEM > #{working_dir}/dogtag-ca-crl.pem})
+        on(host, %{curl -sk "https://#{ca}:#{ca_metadata['simp-puppet-pki'][:https_port]}/ca/ee/ca/getCRL?op=getCRL&crlIssuingPoint=MasterCRL" | openssl crl -inform DER -outform PEM > #{working_dir}/dogtag-ca-crl.pem})
       end
 
       it 'should obtain a certificate from the CA' do
-        on(host, %{cd #{working_dir} && sscep enroll -u http://#{ca}:#{ca_metadata['simp-puppet-pki']['http_port']}/ca/cgi-bin/pkiclient.exe -c dogtag-ca.crt -k #{fqdn}.key -r #{fqdn}.csr -l #{fqdn}.pem})
+        on(host, %{cd #{working_dir} && sscep enroll -u http://#{ca}:#{ca_metadata['simp-puppet-pki'][:http_port]}/ca/cgi-bin/pkiclient.exe -c dogtag-ca.crt -k #{fqdn}.key -r #{fqdn}.csr -l #{fqdn}.pem -S sha1 -v -d})
+
+        cert_list = get_cert_list(ca_host, 'simp-puppet-pki', ca_metadata['simp-puppet-pki'][:https_port])
+        expect( cert_list ).to match(/Subject DN: CN=#{fqdn}/)
       end
 
       if host[:roles].include?('server')

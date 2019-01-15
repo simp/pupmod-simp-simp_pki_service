@@ -222,7 +222,7 @@ alias pki-root='pki-root-base -n "caadmin" -P https -p 4509'
 #### Adding CA certs for the BASH aliases
 
 Prior to using the aliases above for regular purposes you need to ensure that
-the CA chains are properly imported into the NSS databases in the disparate
+the CA chains are properly imported into the NSS databases in the corresponding
 `alias` directories listed above.
 
 Don't worry, you only need to do this **once per CA** and it is good to know
@@ -249,7 +249,7 @@ for all three aliased CAs.
 
 [root@ca crt_tmp]# openssl pkcs12 -in simp-site-pki-certs.p12 \
 -passin file:$HOME/.dogtag/simp-site-pki/ca/password.conf \
--out simp-site-pki-certs.pem
+-out simp-site-pki-ca-chain.pem
 
 # Split the PEM file out into separate PEM files for each CA
 # This is done to get them into into your NSS database
@@ -279,23 +279,68 @@ done
 
 ### Certificate Operations
 
-#### Certmonger SCEP
+#### Certificate Enrollment
 
-##### Server Setup
+This section describe three different certificate enrollment options, each
+of which has been exercised in this module's acceptance tests.
 
-You will first need to edit the `flatfile.txt` file in the appropriate CA.
+A summary of these options is listed in the following table:
+
+| Option          | Pros                   | Cons                                        |
+| --------------- | ---------------------- | ------------------------------------------- |
+| certmonger SCEP | Enrollment via HTTP(S) | Does not work in FIPS mode yet              |
+|                 | Automatic cert refresh |                                             |
+|                 | Simple API             |                                             |
+|                 | Single use passwords   |                                             |
+|                 |                        |                                             |
+| SSCEP           | Simple API             | Does not work in FIPS mode yet              |
+|                 | Single use passwords   | Enrollment via HTTP only                    |
+|                 |                        | Only MD5 or SHA1 for fingerprints or PKCS#7 |
+|                 |                        |                                             |
+| CMC             | Works in FIPS mode     | Only appropriate (secure) when on CA server |
+|                 |                        | Clunky API                                  |
+
+
+##### Certmonger SCEP
+
+---
+
+**IMPORTANT:** For `certmonger` < 0.79.6, this will **NOT** work properly in FIPS
+mode due to a bug in `certmonger` and an associated bug in `dogtag` which, when
+combined, result in the inability to negotiate a proper cipher set for SCEP
+communication.
+
+  * https://pagure.io/certmonger/issue/89
+  * https://pagure.io/dogtagpki/issue/627
+
+---
+
+Certmonger allows clients to obtain certificates from CAs via SCEP.  Each
+SCEP request is validated via a one time password linked to the client's
+IP address.  Requests can be sent over HTTPS (preferred) or HTTP.
+
+###### Server Setup
+
+Each CA has a text file, `flatfile.txt`, that contains the per-client one
+time passwords.
 
 For the `site-pki` CA, this would be in
 `/var/lib/pki/simp-site-pki/ca/conf/flatfile.txt`.
 
 The file is organized as a set of paired values, one for the **IP address**
 (not hostname) of the client that will be enrolling and the other a unique, one
-time use, password that will be used by the client during enrollment.
+time use, password that will be used by the client during enrollment. Each
+pair **must** be separated by a blank line.
+
+**WARNING**: The `PWD` entries can not contain underscores `_`!
 
 **Example**
 
     UID:1.2.3.4
-    PWD:my_one_time_password
+    PWD:my-one-time-password
+
+    UID:1.2.3.5
+    PWD:your-one-time-password
 
 ---
 
@@ -303,15 +348,15 @@ NOTE: You do **NOT** need to restart anything after editing the file!
 
 ---
 
-##### Client Setup
+###### Client Setup
 
 1. Ensure that the `certmonger` package is installed and that the `certmonger`
    process is running and enabled.
 
    ```bash
-   [root@ca ~]# yum -y install certmonger
-   [root@ca ~]# systemctl start certmonger
-   [root@ca ~]# systemctl enable certmonger
+   [root@client ~]# yum -y install certmonger
+   [root@client ~]# systemctl start certmonger
+   [root@client ~]# systemctl enable certmonger
    ```
 
 2. Obtain the **root** certificate for the CA that you will be connecting to. In
@@ -331,16 +376,19 @@ NOTE: You do **NOT** need to restart anything after editing the file!
 4. Add the CA to `certmonger`:
 
    ```bash
-   [root@ca ~]# getcert add-scep-ca -c SIMP_Site \
+   [root@client ~]# getcert add-scep-ca -c SIMP_Site \
      -u https://ca.your.domain:8443/ca/cgi-bin/pkiclient.exe \
      -R /etc/pki/simp-pki-root-ca.pem -I /etc/pki/simp-site-pki-ca.pem
    ```
 
-5. Ensure that your default `nssdb` space exists
+5. Ensure that your default `nssdb` space exists, as, under the hood,
+   certmonger uses certutil, which, in turn requires this NSS database
+   to be present:
 
    ```bash
-   [root@ca ~]#
+   [root@client ~]#
      if [ ! -d $HOME/.netscape ]; then
+       mkdir $HOME/.netscape
        certutil -N
      fi
    ```
@@ -348,7 +396,7 @@ NOTE: You do **NOT** need to restart anything after editing the file!
 6. Request a certificate using `certmonger`:
 
    ```bash
-   [root@ca ~]# getcert request -c SIMP_Site -k /etc/pki/host_cert.pem \
+   [root@client ~]# getcert request -c SIMP_Site -k /etc/pki/host_cert.pem \
      -f /etc/pki/host_cert.pub \
      -I Host_Cert_Nickname \
      -r -w -L <password from server setup step>
@@ -357,18 +405,70 @@ NOTE: You do **NOT** need to restart anything after editing the file!
    **NOTE:** The target for the public and private keys **must** have context
    `cert_t` for `certmonger` to be able to write the keys appropriately.
 
----
 
-**IMPORTANT:** Presently this will **NOT** work properly due to a bug in
-`certmonger` and an associated bug in `dogtag` which, combined, result in the
-inability to negotiate a proper cipher set for SCEP communication.
+##### SSCEP Enrollment
 
-  * https://pagure.io/certmonger/issue/89
-  * https://pagure.io/dogtagpki/issue/627
+**IMPORTANT:** For `sscep` <= 0.6.1, this will **NOT** work properly in FIPS
+mode, because, even with the `-S sha1` option set, `sscep` under the hood still
+tries to generate the certificate request transaction ID using MD5.
 
----
+* https://github.com/certnannay/scep/issues/#86
 
-#### CMC Manual Enrollment
+
+[SSCEP](https://github.com/certnanny/sscep) allows clients to obtain certificates
+from CAs via SCEP.  Each SCEP request is validated via a one time password linked
+to the client's IP address.  Requests can only be sent over HTTP.
+
+###### Server Setup
+
+You must set one time passwords for each client on the CA server, exactly as
+is described in [Server Setup for Certmonger](#server-setup).
+
+###### Client Setup
+
+1. Ensure that the `sscep` package is installed.
+
+   ```bash
+   [root@client ~]# yum -y install sscep
+   ```
+
+2. Obtain the CA certificate for the CA that you will be connecting to.  In this
+   example, we will be connecting to the `simp-site-pki` CA.
+
+   ```bash
+   [root@client ~]# sscep getca \
+     -u http://ca.your.domain:8080/ca/cgi-bin/pkiclient.exe \
+     -c ca.crt \
+     -F sha1
+   ```
+
+3. Create a certificate request.
+
+   * For simple cases, you can use the `mkrequest` script provided by the `sscep`
+     package. This will create `local.key` and `local.csr` files.
+
+     ```bash
+     [root@client ~]# mkrequest -ip `hostname -i` <password from server setup step>
+     ```
+   * For cases, in which you need to customize the CSR beyond what is provided
+     by `mkrequest` script, you can use `openssl genrsa` and `openssl req` to
+     generate the key and CSR files, respectively. A complete example that uses
+     those `openssl` commands can be found in the Puppet certificate replacement
+     test, `spec/acceptance/suites/default/20_puppet_swap_spec.rb`.
+
+4. Request a certificate using `sscep`:
+
+   ```bash
+   [root@client ~]# sscep enroll \
+     -u http://ca.your.domain:8080/ca/cgi-bin/pkiclient.exe \
+     -c ca.crt \
+     -k local.key \
+     -r local.csr \
+     -l cert.crt \
+     -S sha1
+   ```
+
+##### CMC Manual Enrollment
 
 An alternate method for certificate enrollment,
 [CMC](https://tools.ietf.org/html/rfc5273) may be used if you need to generate
@@ -381,21 +481,33 @@ not add this capability to all hosts.
 All of the following steps should be done from a host that has access to one of
 the privileged PKI user certificates (in general this is only your CA).
 
-1. Create a certificate request for your host:
+1. Ensure that your default `nssdb` space exists, as certutil requires
+   this NSS database to be present:
 
-   * If you don't have a `~/.netscape` directory, you'll need to run `certutil
-     -N` first!
+   ```bash
+   [root@ca ~]#
+     if [ ! -d $HOME/.netscape ]; then
+       mkdir $HOME/.netscape
+       certutil -N
+     fi
+   ```
+
+2. Create a certificate request for your host, using a seed of 512
+   bytes from /dev/urandom:
 
     ```bash
     [root@ca ~]# mkdir -f CMC && cd CMC
-    [root@ca CMC]# certutil -R -s "cn=`hostname -f`,ou=Hosts,dc=your,dc=domain" \
+    [root@ca CMC]# dd if=/dev/urandom of=seed count=1
+    [root@ca CMC]# certutil -R \
+      -s "cn=`hostname -f`,ou=Hosts,dc=your,dc=domain" \
       -k rsa \
       -g 4096 \
       -Z SHA384 \
-      -o hostcert.req
+      -z seed \
+      | openssl req -inform DER -outform PEM > hostcert.req
     ```
 
-2. Create a `cmc-request.cfg` file with the following content:
+3. Create a `cmc-request.cfg` file with the following content:
 
    ```
    # NSS database directory.
@@ -425,13 +537,13 @@ the privileged PKI user certificates (in general this is only your CA).
    output=/root/CMC/sslserver-cmc-request.bin
    ```
 
-3. Generate the `CMCRequest` *bin* file
+4. Generate the `CMCRequest` *bin* file
 
    ```bash
    [root@ca CMC]# CMCRequest cmc-request.cfg
    ```
 
-4. Create a `cmc-submit.cfg` file with the following content
+5. Create a `cmc-submit.cfg` file with the following content
 
    ```
    # PKI server host name.
@@ -468,18 +580,33 @@ the privileged PKI user certificates (in general this is only your CA).
    output=/root/CMC/sslserver-cmc-response.bin
    ```
 
-5. Submit the CMC Request
+6. Submit the CMC Request
 
    ```bash
    [root@ca CMC]# HttpClient cmc-submit.cfg
    ```
 
-6. Unpack the signed certificate (you only need the CA cert in your `nssdb` for this)
+7. Unpack the signed certificate along with its certificate chain into
+   a PKCS #7 PEM-formatted file:
+   `nssdb` for this):
 
    ```bash
    [root@ca CMC]# CMCResponse -d ~/.dogtag/simp-puppet-pki/ca/alias \
-     -i sslserver-cmc-response.bin > signed_host_cert.pub
+     -i sslserver-cmc-response.bin -o signed_host_cert_chain.p7b
    ```
+8. Extract the all the certificates in the chain from the PKCS #7 file
+   into a single file:
+
+   ```bash
+   [root@ca CMC]# openssl pkcs7 -print_certs \
+      -in signed_host_cert_chain.p7b \
+      -out signed_host_cert_chain.pem
+   ```
+
+9. Manually save the new certificate to its own file, move
+   to the appropriate directory and ensure the file has the SELinux
+   context `cert_t`.
+
 
 #### Listing Certificates
 
@@ -522,6 +649,51 @@ out of a generated certificate as follows:
 [root@ca ~]# openssl ocsp -issuer site-pki-ca-chain.pem -cert to_verify.pem \
   -text -url `openssl x509 -noout -ocsp_uri -in to_verify.pem`
 ```
+
+#### Certificate Problem Debug
+
+Debugging the reason a certificate request failed can be challenging.  This
+section contains a few notes to aid in that debug.
+
+* The `dogtag` server logs for a CA are found at `/var/log/pki/<CA name>/ca`
+  * The `system` log will contain any enrollment error message.
+  * The `debug` file will contain hex dumps of DER-encoded request messages.
+    You can print those request messages out as follows:
+
+    1. Copy the hex dump of a single request to a file named `debug_snippet`.
+    2. Create a DER-formatted file from that hex dump by executing the
+       following Ruby code:
+
+       ```bash
+       File.open('debug.req', 'w'){|fh| fh.puts [File.read('debug_snippet').gsub("\n",' ').gsub(' ','')].pack('H*') }
+       ```
+
+    3. Use `openssl` to inspect the file contents:
+
+       ```bash
+       openssl req -inform DER -in debug.req -text
+       ```
+
+* If you see
+  "CEP Enrollment: CRS enrollment failed: Could not post new request. Error Invalid Credential"
+  in the CA server `system` log, the wrong password was used for the SCEP request.  Verify
+  a one time password for the client is set in `/var/lib/pki/<CA name>/ca/conf/flatfile.txt`
+  on the CA server and that the specified password matches the one used in the certificate
+  request.
+
+* If you see "sscep: wrong (or missing) MIME content type" from the
+  `scep enroll` command or
+  "Couldn't handle CEP request (PKCSReq) - Could not unwrap PKCS10 blob: DerValue.getDirectoryString: invalid tag"
+  in the CA server `system` log, the SCEP one time password may contain
+  characters disallowed by the underlying software (e.g., an underscore).
+  Per RFC 2985, these passwords must be of X.520 type `DirectoryString`,
+  which is comprised of UTF-8 encoded Unicode characters.  However, the
+  validation software may impose additional restrictions.
+
+* If you see
+  "CEP Enrollment: Enrollment failed: user used duplicate transaction ID."
+  in the CA server `system` log, that means you need to regenerate your
+  client private key.
 
 ### Directory Operations
 

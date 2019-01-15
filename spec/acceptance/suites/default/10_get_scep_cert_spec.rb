@@ -1,48 +1,68 @@
 require 'spec_helper_acceptance'
 
-test_name 'obtain SCEP certificates using sscep'
+test_name 'Obtain SCEP certificates using sscep'
 
-describe 'simp_pki_service' do
+describe 'Obtain SCEP certificates using sscep' do
   ca_metadata = {
     'simp-puppet-pki' => {
-      'http_port'  => 5508,
-      'https_port' => 5509
+      :http_port  => 5508,
+      :https_port => 5509
     },
     'simp-site-pki' => {
-      'http_port'  => 8080,
-      'https_port' => 8443
+      :http_port  => 8080,
+      :https_port => 8443
     }
   }
 
-  hosts_with_role(hosts, 'ca').each do |host|
-    context host do
-      ca_metadata.keys.each do |ca|
-        context "CA #{ca}" do
-          it 'should have a artifact collection directory' do
-            host.mkdir_p(ca)
-          end
+  hosts_with_role(hosts, 'ca').each do |ca_host|
+    context "CA server #{ca_host}" do
+      let(:ca_hostname) { fact_on(ca_host, 'fqdn') }
+      let(:one_time_password) { 'one-time-password' }
 
-          it 'should have a password set for SCEP requests for the host' do
-            on(host, %{echo -e "UID:`hostname -i`\\nPWD:password" > /var/lib/pki/#{ca}/ca/conf/flatfile.txt})
+      ca_metadata.each do |ca, info|
+        context "on CA server #{ca_host} for CA #{ca}" do
+          it "should set one time passwords for #{ca} SCEP requests from all clients" do
+            create_scep_otps(hosts, ca_host, ca, one_time_password)
           end
+        end
 
-          it 'should have sscep installed' do
-            host.install_package('sscep')
-          end
+        hosts.each do |client|
+          context "on client #{client}" do
+            let(:working_dir) { File.join('scep', ca) }
+            let(:client_ip) { on(client,'hostname -i').stdout.strip }
 
-          it 'should get the CA certificate' do
-            on(host, %{sscep getca -u http://$HOSTNAME:#{ca_metadata[ca]['http_port']}/ca/cgi-bin/pkiclient.exe -c #{ca}/ca.crt})
-          end
+            it 'should have sscep installed' do
+              client.install_package('sscep')
+            end
 
-          it 'should generate a certificate request' do
-            on(host, %{cd #{ca} && mkrequest -ip `hostname -i` password})
-          end
+            it 'should have a artifact collection directory' do
+              client.mkdir_p(working_dir)
+            end
 
-          it 'should enroll the certificate' do
-            on(host, %{cd #{ca} && sscep enroll -u http://$HOSTNAME:#{ca_metadata[ca]['http_port']}/ca/cgi-bin/pkiclient.exe -c ca.crt -k local.key -r local.csr -l cert.crt})
+            it 'should get the CA certificate' do
+              on(client, "sscep getca -u http://#{ca_hostname}:#{info[:http_port]}/ca/cgi-bin/pkiclient.exe -c #{working_dir}/ca.crt -F sha1")
+            end
+
+            it 'should generate a certificate request' do
+              on(client, "cd #{working_dir} && mkrequest -ip #{client_ip} #{one_time_password}")
+            end
+
+            it 'should enroll the certificate' do
+              on(client, "cd #{working_dir} && sscep enroll -u http://#{ca_hostname}:#{info[:http_port]}/ca/cgi-bin/pkiclient.exe -c ca.crt -k local.key -r local.csr -l cert.crt -S sha1 -v -d")
+
+              verify_cert(ca_host, ca, info[:https_port], client, "#{working_dir}/cert.crt", client_ip)
+            end
+
+            it 'should not allow the one-time password to be reused' do
+              # generate a new request
+              on(client, "cd #{working_dir} && mkrequest -ip #{client_ip} #{one_time_password}")
+              on(client, "cd #{working_dir} && sscep enroll -u http://#{ca_hostname}:#{info[:http_port]}/ca/cgi-bin/pkiclient.exe -c ca.crt -k local.key -r local.csr -l cert2.crt -S sha1", :accept_all_exit_codes => true)
+              on(client, "ls #{working_dir}/cert2.crt", :acceptable_exit_codes => [2])
+            end
           end
         end
       end
     end
   end
 end
+

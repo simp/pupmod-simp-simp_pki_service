@@ -2,7 +2,11 @@ require 'beaker-rspec'
 require 'tmpdir'
 require 'yaml'
 require 'simp/beaker_helpers'
+require_relative 'acceptance/helpers/pkiutils'
+
 include Simp::BeakerHelpers
+include Acceptance::Helpers::PkiUtils
+
 
 unless ENV['BEAKER_provision'] == 'no'
   hosts.each do |host|

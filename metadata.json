@@ -1,6 +1,6 @@
 {
   "name": "simp-simp_pki_service",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "SIMP Team",
   "summary": "A SIMP module for setting up a SIMP-specific DogTag CA",
   "license": "Apache-2.0",

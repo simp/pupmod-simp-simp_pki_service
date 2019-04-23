@@ -1,3 +1,6 @@
+* Tue Apr 23 2019 Joseph Sharkey <shark.bruhaha@gmail.com> - 0.2.1
+- Updated .travis.yml, .gitlab-ci.yml, .ruby-version
+
 * Tue Jan 15 2019 Liz Nemsick <lnemsick.simp@gmail.com> - 0.2.0
 - Update documentation
 - Add acceptance tests for obtaining certs via CMC and certmonger

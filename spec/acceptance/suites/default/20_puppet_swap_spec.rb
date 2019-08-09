@@ -105,9 +105,31 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
       end
 
       it 'should get the CA certificate chain' do
-        # This bunch of nonsense pulls out the entire CA chain into the base
-        # format that Puppet expects
-        on(host, %{openssl s_client -host #{ca} -port #{ca_metadata['simp-puppet-pki'][:https_port]} -prexit -showcerts 2>/dev/null < /dev/null | awk '{FS="\\n"; RS="-.*CERTIFICATE.*-";}!seen[$0] && $0 ~ /MII/ {print "-----BEGIN CERTIFICATE-----"$0"-----END CERTIFICATE-----"} {++seen[$0]}' > #{working_dir}/dogtag-ca-chain.pem})
+        # Puppet expects the entire CA cert chain to be a concatenated set of
+        # PEM-formatted certificates.
+        raw_cert_chain = on(host, %{openssl s_client -host #{ca} -port #{ca_metadata['simp-puppet-pki'][:https_port]} -prexit -showcerts 2>/dev/null < /dev/null }).stdout
+
+        certs = []
+        cert_lines = nil
+        cert_found = false
+        raw_cert_chain.split("\n").each do |line|
+          if line.include?('CERTIFICATE')
+            if line.include?('BEGIN')
+              cert_found = true
+              cert_lines = []
+            elsif line.include?('END')
+              cert_lines << line
+              certs << cert_lines.join("\n")
+              cert_found = false
+            end
+          end
+          cert_lines << line if cert_found
+        end
+        certs.uniq!
+        create_remote_file(host,
+          "#{working_dir}/dogtag-ca-chain.pem",
+          "#{certs.join("\n")}\n"
+        )
       end
 
       it 'should get the CA CRL' do
@@ -143,6 +165,7 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 
       # This is needed due to a bug in puppet and is documented at
       # https://puppet.com/docs/puppet/5.3/config_ssl_external_ca.html
+      # UPDATE:  Not fixed as of Puppet 6.7.2
       it 'should set CRL checking to false' do
         on(host, 'puppet config set certificate_revocation false')
       end

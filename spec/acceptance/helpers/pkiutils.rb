@@ -40,12 +40,28 @@ module Acceptance
         # Extract certs in the cert chain from PCKS #7
         cert_chain_file = "#{pkcs7_file}.pem"
         on(host, "openssl pkcs7 -print_certs -in #{pkcs7_file} -out #{cert_chain_file}")
-        cert_chains = on(host, "cat #{cert_chain_file}").stdout.split("\n\n")
+        cert_chains_raw = on(host, "cat #{cert_chain_file}").stdout
+
+        cert_chains = []
+        cert_lines = []
+        cert_found = false
+        cert_chains_raw.split("\n").each do |line|
+          next if line.strip.empty?
+          if line.match (/^subject/)
+            cert_found = true
+            cert_lines = []
+          elsif line.match(/END CERTIFICATE/)
+            cert_found = false
+            cert_lines << line
+            cert_chains << cert_lines.join("\n")
+          end
+          cert_lines << line if cert_found
+        end
 
         cert_content = nil
         cert_chains.each do |cert|
           unless cert.match(/^subject.*CA Signing Certificate$/)
-            if cert.match(/CN=#{cert_subject}/)
+            if cert.match(/CN\s*=\s*#{cert_subject}/)
               cert_content = cert.gsub(/^.*BEGIN /m,'-----BEGIN ')
             end
           end
@@ -205,8 +221,8 @@ output=#{cfg[:files][:cmc_response]}
       #
       def verify_cert(ca_host, ca, ca_https_port, cert_host, cert_file, cert_subject)
          cert_text = on(cert_host, "openssl x509 -in #{cert_file} -text -noout").stdout
-         expect( cert_text ).to match Regexp.escape("Issuer: O=SIMP, OU=#{ca}, CN=CA Signing Certificate")
-         expect( cert_text ).to match Regexp.escape("Subject: CN=#{cert_subject}")
+         expect( cert_text ).to match /Issuer: O\s*=\s*SIMP, OU\s*=\s*#{Regexp.escape(ca)}, CN\s*=\s*CA Signing Certificate/
+         expect( cert_text ).to match /Subject: CN\s*=\s*#{Regexp.escape(cert_subject)}/
 
          match_data = cert_text.match(/Serial Number: [0-9]+ \((0[xX]{1}[0-9a-fA-F]+)\)/)
          expect( match_data ).to_not be_nil

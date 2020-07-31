@@ -1,3 +1,6 @@
+* Thu Jul 23 2020 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 0.3.1-0
+- update the upper bound of simplib for SIMP 6.5 release
+
 * Fri Aug 09 2019 Liz Nemsick <lnemsick.simp@gmail.com> - 0.3.0-0
 - Remove Puppet 4 support
 - Add Puppet 6 support

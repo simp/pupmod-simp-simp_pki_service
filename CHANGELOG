@@ -1,5 +1,5 @@
 * Sat Dec 19 2020 Chris Tessmer <chris.tessmer@onyxpoint.com> - 0.3.2
-- Removed EL6 support
+- Maintenance update for module assets
 
 * Thu Jul 23 2020 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 0.3.1-0
 - update the upper bound of simplib for SIMP 6.5 release

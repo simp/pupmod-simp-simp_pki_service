@@ -7,5 +7,6 @@ fixtures:
     haveged: https://github.com/simp/pupmod-simp-haveged
     stdlib: https://github.com/simp/puppetlabs-stdlib
     simplib: https://github.com/simp/pupmod-simp-simplib
+    systemd: https://github.com/simp/puppet-systemd
   symlinks:
     simp_pki_service: "#{source_dir}"

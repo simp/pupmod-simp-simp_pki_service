@@ -4,9 +4,9 @@ fixtures:
     augeas_core:
       repo: https://github.com/simp/pupmod-puppetlabs-augeas_core.git
       puppet_version: ">= 6.0.0"
-    haveged: https://github.com/simp/pupmod-simp-haveged
-    stdlib: https://github.com/simp/puppetlabs-stdlib
-    simplib: https://github.com/simp/pupmod-simp-simplib
-    systemd: https://github.com/simp/puppet-systemd
+    haveged: https://github.com/simp/pupmod-simp-haveged.git
+    stdlib: https://github.com/simp/puppetlabs-stdlib.git
+    simplib: https://github.com/simp/pupmod-simp-simplib.git
+    systemd: https://github.com/simp/puppet-systemd.git
   symlinks:
     simp_pki_service: "#{source_dir}"

@@ -67,7 +67,7 @@ jobs:
     outputs:
       valid: ${{ steps.validate-glci-file.outputs.valid }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
@@ -84,7 +84,7 @@ jobs:
     outputs:
       permitted: ${{ steps.user-repo-permissions.outputs.permitted }}
     steps:
-      - uses: actions/github-script@v3
+      - uses: actions/github-script@v6
         id: user-repo-permissions
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
@@ -145,7 +145,7 @@ jobs:
       #       - "created|waiting_for_resource|preparing|pending|running"
       #       - Exception: don't cancel existing pipeline for our own commit
       # - [x] if PR: force-push branch to GitLab
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: needs.contributor-permissions.outputs.permitted == 'true'
         with:
           clean: true
@@ -174,7 +174,7 @@ jobs:
 ###  examine_contexts:
 ###    name: 'Examine Context contents'
 ###    if: always()
-###    runs-on: ubuntu-16.04
+###    runs-on: ubuntu-latest
 ###    needs: [ glci-syntax, contributor-permissions ]
 ###    steps:
 ###      - name: Dump contexts

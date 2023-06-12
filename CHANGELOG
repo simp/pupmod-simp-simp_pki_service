@@ -1,3 +1,6 @@
+* Mon Jun 12 2023 Chris Tessmer <chris.tessmer@onyxpoint.com> - 0.5.0
+- Add RockyLinux 8 support
+
 * Thu Jun 17 2021 Chris Tessmer <chris.tessmer@onyxpoint.com> - 0.4.0
 - Removed support for Puppet 5
 - Ensured support for Puppet 7 in requirements and stdlib

@@ -72,9 +72,9 @@ define simp_pki_service::directory_server (
     [General]
     SuiteSpotUserID=${service_user}
     SuiteSpotGroup=${service_group}
-    AdminDomain=${facts['domain']}
-    FullMachineName=${facts['fqdn']}
-    ConfigDirectoryLdapURL=ldap://${facts['fqdn']}:389/o=NetscapeRoot
+    AdminDomain=${facts['networking']['domain']}
+    FullMachineName=${facts['networking']['fqdn']}
+    ConfigDirectoryLdapURL=ldap://${facts['networking']['fqdn']}:389/o=NetscapeRoot
     ConfigDirectoryAdminID=${admin_user}
     ConfigDirectoryAdminPwd=${admin_password}
 

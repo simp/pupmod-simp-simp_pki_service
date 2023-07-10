@@ -106,7 +106,7 @@ define simp_pki_service::ca (
   Simp_pki_service::SecurityDomain $pki_security_domain,
   String[2]                        $admin_user                         = 'caadmin',
   String[1]                        $admin_password                     = simplib::passgen("${pki_security_domain}_${name}", { 'length' => 64, 'complexity' => 0 }),
-  Simplib::Hostname                $pki_security_domain_hostname       = $facts['fqdn'],
+  Simplib::Hostname                $pki_security_domain_hostname       = $facts['networking']['fqdn'],
   Simplib::Port                    $pki_security_domain_https_port     = 8443,
   Boolean                          $root_ca                            = false,
   String[2]                        $pki_security_domain_user           = $admin_user,
@@ -203,7 +203,7 @@ define simp_pki_service::ca (
 
   if $enable_kra or ( $ca_config['ca.scep.enable'] == true ) {
     if $create_subordinate_security_domain {
-      $_kra_pki_security_domain_hostname   = $facts['fqdn']
+      $_kra_pki_security_domain_hostname   = $facts['networking']['fqdn']
       $_kra_pki_security_domain_https_port = $https_port
       $_kra_pki_security_domain_user       = $admin_user
       $_kra_pki_security_domain_password   = $admin_password
@@ -228,7 +228,7 @@ define simp_pki_service::ca (
       pki_security_domain_hostname   => $_kra_pki_security_domain_hostname,
       pki_security_domain_https_port => $_kra_pki_security_domain_https_port,
       admin_password                 => $admin_password,
-      ca_hostname                    => $facts['fqdn'],
+      ca_hostname                    => $facts['networking']['fqdn'],
       ca_port                        => $https_port,
       admin_user                     => $admin_user,
       service_timeout                => $service_timeout,

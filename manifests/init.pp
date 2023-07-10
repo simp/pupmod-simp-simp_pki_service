@@ -29,7 +29,7 @@ class simp_pki_service (
   Simp_pki_service::SecurityDomain $pki_security_domain          = 'SIMP',
   Hash                             $ds_config                    = {
     'root_dn'        => "cn=${pki_security_domain} Directory Manager",
-    'base_dn'        => sprintf('ou=%s,%s',$pki_security_domain, simplib::ldap::domain_to_dn($facts['domain'], false)),
+    'base_dn'        => sprintf('ou=%s,%s',$pki_security_domain, simplib::ldap::domain_to_dn($facts['networking']['domain'], false)),
     'admin_password' => simplib::passgen('389-ds-simp-pki', {'length' => 64, 'complexity' => 0 })
   },
   Hash[String[1], Hash]            $cas                          = {

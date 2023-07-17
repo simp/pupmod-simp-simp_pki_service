@@ -90,7 +90,7 @@ define simp_pki_service::kra (
 
   ensure_packages('pki-kra', { ensure => $package_ensure })
 
-  $_fqdn = $facts['fqdn']
+  $_fqdn = $facts['networking']['fqdn']
   $_kra_config = @("KRA_CONFIG")
     # This file managed by Puppet
     [DEFAULT]

@@ -1,6 +1,6 @@
 {
   "name": "simp-simp_pki_service",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "SIMP Team",
   "summary": "A SIMP module for setting up a SIMP-specific DogTag CA",
   "license": "Apache-2.0",
@@ -14,7 +14,7 @@
     },
     {
       "name": "puppetlabs/stdlib",
-      "version_requirement": ">= 6.18.0 < 8.0.0"
+      "version_requirement": ">= 8.0.0 < 9.0.0"
     },
     {
       "name": "simp/simplib",
@@ -32,6 +32,12 @@
       "operatingsystem": "RedHat",
       "operatingsystemrelease": [
         "7"
+      ]
+    },
+    {
+      "operatingsystem": "Rocky",
+      "operatingsystemrelease": [
+        "8"
       ]
     }
   ],

@@ -358,44 +358,44 @@ pup7.pe-unit:
 # FIPS and OEL may or may not work at this point but would be nice to know
 
 
-pup6.x:
-  <<: *pup_6_x
+pup7.x:
+  <<: *pup_7_x
   <<: *acceptance_base
   <<: *with_SIMP_ACCEPTANCE_MATRIX_LEVEL_2
   script:
     - 'bundle exec rake beaker:suites[default,default]'
 
-pup6.x-fips:
+pup7.x-fips:
   allow_failure: true
-  <<: *pup_6_x
+  <<: *pup_7_x
   <<: *acceptance_base
   <<: *with_SIMP_ACCEPTANCE_MATRIX_LEVEL_3
   script:
     - 'BEAKER_fips=yes bundle exec rake beaker:suites[default,default]'
 
-pup6.pe:
-  <<: *pup_6_pe
+pup7.pe:
+  <<: *pup_7_pe
   <<: *acceptance_base
   script:
     - 'bundle exec rake beaker:suites[default,default]'
 
-pup6.pe-fips:
+pup7.pe-fips:
   allow_failure: true
-  <<: *pup_6_pe
+  <<: *pup_7_pe
   <<: *acceptance_base
   script:
     - 'BEAKER_fips=yes bundle exec rake beaker:suites[default,default]'
 
-pup6.pe-oel:
+pup7.pe-oel:
   allow_failure: true
-  <<: *pup_6_pe
+  <<: *pup_7_pe
   <<: *acceptance_base
   script:
     - 'bundle exec rake beaker:suites[default,oel]'
 
-pup6.pe-oel-fips:
+pup7.pe-oel-fips:
   allow_failure: true
-  <<: *pup_6_pe
+  <<: *pup_7_pe
   <<: *acceptance_base
   <<: *with_SIMP_ACCEPTANCE_MATRIX_LEVEL_3
   script:

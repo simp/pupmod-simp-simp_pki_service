@@ -1,6 +1,6 @@
 {
   "name": "simp-simp_pki_service",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "SIMP Team",
   "summary": "A SIMP module for setting up a SIMP-specific DogTag CA",
   "license": "Apache-2.0",
@@ -10,15 +10,15 @@
   "dependencies": [
     {
       "name": "simp/haveged",
-      "version_requirement": ">= 0.4.4 < 1.0.0"
+      "version_requirement": ">= 0.4.5 < 1.0.0"
     },
     {
       "name": "puppetlabs/stdlib",
-      "version_requirement": ">= 8.0.0 < 9.0.0"
+      "version_requirement": ">= 8.0.0 < 10.0.0"
     },
     {
       "name": "simp/simplib",
-      "version_requirement": ">= 3.9.0 < 5.0.0"
+      "version_requirement": ">= 4.9.0 < 5.0.0"
     }
   ],
   "operatingsystem_support": [
@@ -44,7 +44,7 @@
   "requirements": [
     {
       "name": "puppet",
-      "version_requirement": ">= 6.22.1 < 8.0.0"
+      "version_requirement": ">= 7.0.0 < 9.0.0"
     }
   ],
   "tags": [

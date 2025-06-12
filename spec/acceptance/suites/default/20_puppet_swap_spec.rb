@@ -131,18 +131,21 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
       end
 
       it 'gets the CA CRL' do
+        url = "https://#{ca}:#{ca_metadata['simp-puppet-pki'][:https_port]}/ca/ee/ca/getCRL?op=getCRL&crlIssuingPoint=MasterCRL"
         on(host,
-%(curl -sk "https://#{ca}:#{ca_metadata['simp-puppet-pki'][:https_port]}/ca/ee/ca/getCRL?op=getCRL&crlIssuingPoint=MasterCRL" | openssl crl -inform DER -outform PEM > #{working_dir}/dogtag-ca-crl.pem))
+          %(curl -sk "#{url}" | openssl crl -inform DER -outform PEM > #{working_dir}/dogtag-ca-crl.pem))
       end
 
       it 'obtains a certificate from the CA' do
+        url = "http://#{ca}:#{ca_metadata['simp-puppet-pki'][:http_port]}/ca/cgi-bin/pkiclient.exe"
         on(host,
-%(cd #{working_dir} && sscep enroll -u http://#{ca}:#{ca_metadata['simp-puppet-pki'][:http_port]}/ca/cgi-bin/pkiclient.exe -c dogtag-ca.crt -k #{fqdn}.key -r #{fqdn}.csr -l #{fqdn}.pem -S sha1 -v -d))
+          %(cd #{working_dir} && sscep enroll -u #{url} -c dogtag-ca.crt -k #{fqdn}.key -r #{fqdn}.csr -l #{fqdn}.pem -S sha1 -v -d))
 
         cert_list = get_cert_list(ca_host, 'simp-puppet-pki', ca_metadata['simp-puppet-pki'][:https_port])
         expect(cert_list).to match(%r{Subject DN: CN=#{fqdn}})
       end
 
+      # rubocop:disable RSpec/RepeatedDescription, RSpec/RepeatedExample
       if host[:roles].include?('server')
         it 'ensures that the puppetserver is stopped' do
           on(host, 'puppet resource service puppetserver ensure=stopped')
@@ -175,6 +178,7 @@ keyUsage = nonRepudiation, digitalSignature, keyEncipherment
           on(host, 'puppet resource service puppetserver ensure=stopped')
         end
       end
+      # rubocop:enable RSpec/RepeatedDescription, RSpec/RepeatedExample
     end
   end
 

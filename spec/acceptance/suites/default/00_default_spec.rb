@@ -5,27 +5,27 @@ test_name 'Set up simp_pki_service'
 describe 'Set up simp_pki_service' do
   ca_metadata = {
     'simp-pki-root' => {
-      :http_port         => 4508,
-      :https_port        => 4509,
-      :num_initial_certs => 10
+      http_port: 4508,
+      https_port: 4509,
+      num_initial_certs: 10
     },
     'simp-puppet-pki' => {
-      :http_port         => 5508,
-      :https_port        => 5509,
-      :num_initial_certs => 7
+      http_port: 5508,
+      https_port: 5509,
+      num_initial_certs: 7
     },
     'simp-site-pki' => {
-      :http_port         => 8080,
-      :https_port        => 8443,
-      :num_initial_certs => 7
+      http_port: 8080,
+      https_port: 8443,
+      num_initial_certs: 7
     }
   }
 
-  let(:manifest) {
+  let(:manifest) do
     <<-EOS
       include '::simp_pki_service'
     EOS
-  }
+  end
 
   # This is needed to lower the SCEP ciphers down to the defaults used by sscep
   # and certmonger
@@ -46,7 +46,7 @@ describe 'Set up simp_pki_service' do
   # - Figure out why sscep enrollment with an SHA384-encrypted request
   #   works in 20_puppet_swap_spec.rb, even though that encryption
   #   algorithm is **NOT** in ca.scep.allowedHashAlgorithms
-  let(:hieradata) {
+  let(:hieradata) do
     <<-EOS
       simp_pki_service::custom_cas:
         'simp-puppet-pki':
@@ -62,11 +62,11 @@ describe 'Set up simp_pki_service' do
             'ca.scep.allowedHashAlgorithms': 'MD5,SHA1,SHA256,SHA512'
             'ca.scep.hashAlgorithm': 'MD5'
     EOS
-  }
+  end
 
   hosts.each do |host|
     context "on #{host}" do
-      it 'should have a proper FQDN' do
+      it 'has a proper FQDN' do
         on(host, "hostname #{fact_on(host, 'fqdn')}")
         on(host, 'hostname -f > /etc/hostname')
       end
@@ -79,40 +79,40 @@ describe 'Set up simp_pki_service' do
       let(:import_script) { '/root/nss_import.sh' }
 
       # Using puppet_apply as a helper
-      it 'should work with no errors' do
+      it 'works with no errors' do
         set_hieradata_on(host, hieradata)
-        apply_manifest_on(host, manifest, :catch_failures => true)
+        apply_manifest_on(host, manifest, catch_failures: true)
       end
 
-      it 'should be idempotent' do
-        apply_manifest_on(host, manifest, :catch_changes => true)
+      it 'is idempotent' do
+        apply_manifest_on(host, manifest, catch_changes: true)
       end
 
-      it 'should install NSS import script' do
+      it 'installs NSS import script' do
         scp_to(host, nss_import_script, import_script)
         on(host, "chmod +x #{import_script}")
       end
 
       ca_metadata.each do |ca, info|
         context "for CA #{ca}" do
-          it "should import #{ca} CA chains into the #{ca} NSS database" do
+          it "imports #{ca} CA chains into the #{ca} NSS database" do
             on(host, "#{import_script} #{ca}")
           end
 
-          it 'should have appropriate initial certificates' do
+          it 'has appropriate initial certificates' do
             cert_list = get_cert_list(host, ca, info[:https_port])
-            expect( cert_list ).to match /Number of entries returned #{info[:num_initial_certs]}*/
+            expect(cert_list).to match(%r{Number of entries returned #{info[:num_initial_certs]}*})
           end
 
-          it 'should respond to OCSP queries' do
+          it 'responds to OCSP queries' do
             result = on(host, "OCSPClient -d ~/.dogtag/#{ca}/ca/alias -h $HOSTNAME -p #{info[:http_port]} -t /ca/ocsp --serial 1 -c caadmin").output.strip
 
-            expect(result).to match(/CertID\.serialNumber=1/)
+            expect(result).to match(%r{CertID\.serialNumber=1})
           end
 
-          it 'should have a CRL' do
+          it 'has a CRL' do
             host.mkdir_p(ca)
-            on(host, %{curl -sk "https://$HOSTNAME:#{info[:https_port]}/ca/ee/ca/getCRL?op=getCRL&crlIssuingPoint=MasterCRL" | openssl crl -inform DER -outform PEM > #{ca}/crl})
+            on(host, %(curl -sk "https://$HOSTNAME:#{info[:https_port]}/ca/ee/ca/getCRL?op=getCRL&crlIssuingPoint=MasterCRL" | openssl crl -inform DER -outform PEM > #{ca}/crl))
           end
         end
       end

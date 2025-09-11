@@ -7,18 +7,18 @@ describe 'Set up simp_pki_service' do
     'simp-pki-root' => {
       http_port: 4508,
       https_port: 4509,
-      num_initial_certs: 10
+      num_initial_certs: 10,
     },
     'simp-puppet-pki' => {
       http_port: 5508,
       https_port: 5509,
-      num_initial_certs: 7
+      num_initial_certs: 7,
     },
     'simp-site-pki' => {
       http_port: 8080,
       https_port: 8443,
-      num_initial_certs: 7
-    }
+      num_initial_certs: 7,
+    },
   }
 
   let(:manifest) do

@@ -106,32 +106,32 @@ module Acceptance::Helpers::PkiUtils
   end
 
   def generate_cmc_request_cfg(cfg)
-    cfg_content = <<-EOM
-# NSS database directory.
-dbdir=/root/.dogtag/#{cfg[:ca][:name]}/ca/alias
+    cfg_content = <<~EOM
+      # NSS database directory.
+      dbdir=/root/.dogtag/#{cfg[:ca][:name]}/ca/alias
 
-# NSS database password.
-password=#{cfg[:ca][:password]}
+      # NSS database password.
+      password=#{cfg[:ca][:password]}
 
-# Token name (default is internal).
-tokenname=internal
+      # Token name (default is internal).
+      tokenname=internal
 
-# Nickname for CA agent certificate.
-nickname=caadmin
+      # Nickname for CA agent certificate.
+      nickname=caadmin
 
-# Request format: pkcs10 or crmf.
-format=pkcs10
+      # Request format: pkcs10 or crmf.
+      format=pkcs10
 
-# Total number of PKCS10/CRMF requests.
-numRequests=1
+      # Total number of PKCS10/CRMF requests.
+      numRequests=1
 
-# Path to the PKCS10/CRMF request.
-# The content must be in Base-64 encoded format.
-# Multiple files are supported. They must be separated by space.
-input=#{cfg[:files][:cert_request]}
+      # Path to the PKCS10/CRMF request.
+      # The content must be in Base-64 encoded format.
+      # Multiple files are supported. They must be separated by space.
+      input=#{cfg[:files][:cert_request]}
 
-# Path for the CMC request.
-output=#{cfg[:files][:cmc_request]}
+      # Path for the CMC request.
+      output=#{cfg[:files][:cmc_request]}
         EOM
 
     create_remote_file(cfg[:ca][:host], cfg[:files][:cmc_request_cfg], cfg_content)
@@ -139,39 +139,39 @@ output=#{cfg[:files][:cmc_request]}
 
   def generate_cmc_submit_cfg(cfg)
     ca_fqdn = fact_on(cfg[:ca][:host], 'fqdn')
-    cfg_content = <<-EOM
-# PKI server host name.
-host=#{ca_fqdn}
+    cfg_content = <<~EOM
+      # PKI server host name.
+      host=#{ca_fqdn}
 
-# PKI server port number.
-port=#{cfg[:ca][:https_port]}
+      # PKI server port number.
+      port=#{cfg[:ca][:https_port]}
 
-# Use secure connection.
-secure=true
+      # Use secure connection.
+      secure=true
 
-# Use client authentication.
-clientmode=true
+      # Use client authentication.
+      clientmode=true
 
-# NSS database directory.
-dbdir=/root/.dogtag/#{cfg[:ca][:name]}/ca/alias
+      # NSS database directory.
+      dbdir=/root/.dogtag/#{cfg[:ca][:name]}/ca/alias
 
-# NSS database password.
-password=#{cfg[:ca][:password]}
+      # NSS database password.
+      password=#{cfg[:ca][:password]}
 
-# Token name (default: internal).
-tokenname=internal
+      # Token name (default: internal).
+      tokenname=internal
 
-# Nickname of CA agent certificate.
-nickname=caadmin
+      # Nickname of CA agent certificate.
+      nickname=caadmin
 
-# CMC servlet path
-servlet=/ca/ee/ca/profileSubmitCMCFull?profileId=caCMCserverCert
+      # CMC servlet path
+      servlet=/ca/ee/ca/profileSubmitCMCFull?profileId=caCMCserverCert
 
-# Path for the CMC request.
-input=#{cfg[:files][:cmc_request]}
+      # Path for the CMC request.
+      input=#{cfg[:files][:cmc_request]}
 
-# Path for the CMC response.
-output=#{cfg[:files][:cmc_response]}
+      # Path for the CMC response.
+      output=#{cfg[:files][:cmc_response]}
         EOM
 
     create_remote_file(cfg[:ca][:host], cfg[:files][:cmc_submit_cfg], cfg_content)

@@ -6,12 +6,12 @@ describe 'Client enroll via CMC on CA server' do
   ca_metadata = {
     'simp-puppet-pki' => {
       http_port: 5508,
-      https_port: 5509
+      https_port: 5509,
     },
     'simp-site-pki' => {
       http_port: 8080,
-      https_port: 8443
-    }
+      https_port: 8443,
+    },
   }
 
   hosts_with_role(hosts, 'ca').each do |ca_host|
@@ -69,15 +69,15 @@ describe 'Client enroll via CMC on CA server' do
                     host: ca_host,
                     name: ca,
                     https_port: info[:https_port],
-                    password: on(ca_host, "cat  /root/.dogtag/#{ca}/ca/password.conf").stdout
+                    password: on(ca_host, "cat  /root/.dogtag/#{ca}/ca/password.conf").stdout,
                   },
                   files: {
                     cert_request: client_cert_request_file,
                     cmc_request_cfg: client_cmc_submit_cfg_file.gsub('submit', 'request'),
                     cmc_request: client_cmc_response_file.gsub('response', 'request'),
                     cmc_submit_cfg: client_cmc_submit_cfg_file,
-                    cmc_response: client_cmc_response_file
-                  }
+                    cmc_response: client_cmc_response_file,
+                  },
                 }
                 generate_cmc_request_files(cfg)
               end

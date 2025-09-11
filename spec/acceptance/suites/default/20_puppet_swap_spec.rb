@@ -6,8 +6,8 @@ describe 'simp_pki_service' do
   ca_metadata = {
     'simp-puppet-pki' => {
       http_port: 5508,
-      https_port: 5509
-    }
+      https_port: 5509,
+    },
   }
 
   let(:manifest) do
@@ -75,24 +75,24 @@ describe 'simp_pki_service' do
         create_remote_file(
           host,
           "#{working_dir}/request.cfg",
-          <<-EOM,
-[ req ]
-prompt = no
-distinguished_name = req_distinguished_name
-attributes = req_attributes
-req_extensions = v3_req
+          <<~EOM,
+            [ req ]
+            prompt = no
+            distinguished_name = req_distinguished_name
+            attributes = req_attributes
+            req_extensions = v3_req
 
-[ req_attributes ]
-challengePassword=#{fqdn}
+            [ req_attributes ]
+            challengePassword=#{fqdn}
 
-[ req_distinguished_name ]
-CN = #{fqdn}
+            [ req_distinguished_name ]
+            CN = #{fqdn}
 
-[ v3_req ]
-basicConstraints = CA:FALSE
-nsCertType = server, client, email, objsign
-keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-#{subject_alt_name}
+            [ v3_req ]
+            basicConstraints = CA:FALSE
+            nsCertType = server, client, email, objsign
+            keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+            #{subject_alt_name}
           EOM
         )
 

@@ -5,12 +5,12 @@ describe 'simp_pki_service::validate_ca_hash' do
     let(:ca_hash) do
       {
         'pki-root' => {
-          'root_ca' => true
+          'root_ca' => true,
         },
      'pki-sub' => {
        'root_ca'   => false,
-       'parent_ca' => 'pki-root'
-     }
+       'parent_ca' => 'pki-root',
+     },
       }
     end
 
@@ -21,19 +21,19 @@ describe 'simp_pki_service::validate_ca_hash' do
     let(:ca_hash) do
       {
         'pki-root' => {
-          'root_ca' => true
+          'root_ca' => true,
         },
      'pki-root2' => {
-       'root_ca' => true
+       'root_ca' => true,
      },
      'pki-sub' => {
        'root_ca'   => false,
-       'parent_ca' => 'pki-root'
+       'parent_ca' => 'pki-root',
      },
      'pki-sub2' => {
        'root_ca'   => false,
-       'parent_ca' => 'pki-root2'
-     }
+       'parent_ca' => 'pki-root2',
+     },
       }
     end
 
@@ -45,8 +45,8 @@ describe 'simp_pki_service::validate_ca_hash' do
       {
         'pki-sub' => {
           'root_ca'   => false,
-          'parent_ca' => 'pki-root'
-        }
+          'parent_ca' => 'pki-root',
+        },
       }
     end
 
@@ -59,11 +59,11 @@ describe 'simp_pki_service::validate_ca_hash' do
     let(:ca_hash) do
       {
         'pki-root' => {
-          'root_ca' => true
+          'root_ca' => true,
         },
      'pki-sub' => {
-       'root_ca' => false
-     }
+       'root_ca' => false,
+     },
       }
     end
 
@@ -76,12 +76,12 @@ describe 'simp_pki_service::validate_ca_hash' do
     let(:ca_hash) do
       {
         'pki-root' => {
-          'root_ca' => true
+          'root_ca' => true,
         },
      'pki-sub' => {
        'root_ca'   => false,
-       'parent_ca' => 'unknown-ca'
-     }
+       'parent_ca' => 'unknown-ca',
+     },
       }
     end
 
@@ -94,16 +94,16 @@ describe 'simp_pki_service::validate_ca_hash' do
     let(:ca_hash) do
       {
         'pki-root' => {
-          'root_ca' => true
+          'root_ca' => true,
         },
      'pki-sub' => {
        'root_ca'   => false,
-       'parent_ca' => 'pki-root'
+       'parent_ca' => 'pki-root',
      },
      'pki-sub2' => {
        'root_ca'   => false,
-       'parent_ca' => 'pki-sub'
-     }
+       'parent_ca' => 'pki-sub',
+     },
       }
     end
 

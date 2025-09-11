@@ -6,12 +6,12 @@ describe 'Client enroll via certmonger'
 ca_metadata = {
   'simp-puppet-pki' => {
     http_port: 5508,
-    https_port: 5509
+    https_port: 5509,
   },
   'simp-site-pki' => {
     http_port: 8080,
-    https_port: 8443
-  }
+    https_port: 8443,
+  },
 }
 
 ca   = 'simp-site-pki'

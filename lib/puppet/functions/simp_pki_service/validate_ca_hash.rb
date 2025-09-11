@@ -13,7 +13,6 @@
 # **Compilation will be terminated if validation fails**
 #
 Puppet::Functions.create_function(:'simp_pki_service::validate_ca_hash') do
-
   # @param ca_hash The CA Hash to process
   #
   # @raise RuntimeError if validation fails
@@ -73,11 +72,11 @@ Puppet::Functions.create_function(:'simp_pki_service::validate_ca_hash') do
   end
 
   def validate_ca_hash(ca_hash)
-    root_cas = ca_hash.select{|k,v| v['root_ca']}.keys
+    root_cas = ca_hash.select { |_k, v| v['root_ca'] }.keys
     sub_cas = ca_hash.keys - root_cas
 
     if root_cas.empty?
-      fail('simp_pki_service::validate_ca_hash(): No Root CAs found in CA configuration Hash')
+      raise('simp_pki_service::validate_ca_hash(): No Root CAs found in CA configuration Hash')
     end
 
     invalid_parent_cas = []
@@ -89,8 +88,7 @@ Puppet::Functions.create_function(:'simp_pki_service::validate_ca_hash') do
       end
     end
 
-    unless invalid_parent_cas.empty?
-      fail("simp_pki_service::validate_ca_hash(): '#{invalid_parent_cas.join(', ')}' do not have valid parent CAs")
-    end
+    return if invalid_parent_cas.empty?
+    raise("simp_pki_service::validate_ca_hash(): '#{invalid_parent_cas.join(', ')}' do not have valid parent CAs")
   end
 end

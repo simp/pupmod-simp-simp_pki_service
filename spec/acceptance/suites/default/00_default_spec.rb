@@ -22,8 +22,8 @@ describe 'Set up simp_pki_service' do
   }
 
   let(:manifest) do
-    <<-EOS
-      include '::simp_pki_service'
+    <<~EOS
+      include 'simp_pki_service'
     EOS
   end
 
@@ -47,7 +47,7 @@ describe 'Set up simp_pki_service' do
   #   works in 20_puppet_swap_spec.rb, even though that encryption
   #   algorithm is **NOT** in ca.scep.allowedHashAlgorithms
   let(:hieradata) do
-    <<-EOS
+    <<~EOS
       simp_pki_service::custom_cas:
         'simp-puppet-pki':
           'ca_config':

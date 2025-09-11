@@ -11,8 +11,8 @@ describe 'simp_pki_service' do
   }
 
   let(:manifest) do
-    <<-EOS
-      include '::simp_pki_service'
+    <<~EOS
+      include 'simp_pki_service'
     EOS
   end
 
